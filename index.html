@@ -443,6 +443,79 @@
     color: #000;
   }
 
+  /* Notes */
+  .card-notes-toggle {
+    width: 100%;
+    background: none;
+    border: none;
+    border-top: 1px solid var(--border);
+    color: var(--text3);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px;
+    padding: 7px 0 0;
+    margin-top: 10px;
+    cursor: pointer;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: color var(--transition);
+  }
+  .card-notes-toggle:hover { color: var(--text2); }
+  .card-notes-toggle .toggle-arrow {
+    display: inline-block;
+    transition: transform 0.2s ease;
+    font-size: 9px;
+  }
+  .card-notes-toggle.open .toggle-arrow { transform: rotate(90deg); }
+  .card-notes-toggle.has-notes { color: var(--accent); }
+  .card-notes-toggle.has-notes:hover { color: var(--text); }
+
+  .card-notes-body {
+    display: none;
+    margin-top: 8px;
+  }
+  .card-notes-body.open { display: block; }
+  .card-notes-body textarea {
+    width: 100%;
+    background: var(--surface3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    padding: 8px 10px;
+    resize: vertical;
+    min-height: 64px;
+    outline: none;
+    transition: border-color var(--transition);
+    line-height: 1.5;
+  }
+  .card-notes-body textarea:focus { border-color: var(--accent); }
+  .card-notes-body textarea::placeholder { color: var(--text3); }
+  .notes-save-row {
+    display: flex; align-items: center; gap: 8px; margin-top: 6px;
+  }
+  .notes-save-btn {
+    background: var(--accent);
+    border: none;
+    color: #fff;
+    border-radius: var(--radius);
+    padding: 5px 12px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background var(--transition);
+  }
+  .notes-save-btn:hover { background: var(--accent2); }
+  .notes-save-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .notes-status {
+    font-size: 11px;
+    font-family: 'DM Mono', monospace;
+    transition: color var(--transition);
+  }
+
   /* Column color themes */
   .col-high .col-dot { background: var(--red); }
   .col-high .col-title { color: var(--red); }
@@ -851,8 +924,10 @@
 const SHEET_ID = '1X0h3QfumXPgfnSB6FzoT7ZsAgjulSWAe1efDRdYkCN0';
 const FORM1_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSevCkOpfjUPWGcPQWnt6_s5DzpxzprLYkATiRkpRkscQdKoDg/formResponse';
 const FORM2_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSfHifjPEa-deGDssRYE8ATSs7ESyAwmMHz0Hwc3x4iq8HGI8g/formResponse';
+const FORM3_URL = 'https://docs.google.com/forms/d/e/1FAIpQLScvZfqA1Keik3QtAZDM_uIlARxwFCUUsmLLjNMRwPE9-xCq-A/formResponse';
 const F1 = { name:'entry.1936166445', status:'entry.958776253', category:'entry.748617586', major:'entry.193485853' };
 const F2 = { name:'entry.1936166445', category:'entry.748617586', month:'entry.193485853', major:'entry.1295486583' };
+const F3 = { name:'entry.1598157101', note:'entry.1545699935' };
 
 const STATUSES = ['High Priority','1st Draft / Editing','Mid Priority','Low Priority','Waiting on Information'];
 const MAJOR_PROJECTS = ['Standalone','Bond','Enrollment','Magnet','Center Stage','Dream Big','WWYLS','Legends & Legacies','Teacher of the Year','Dual Language Schools','CTE','Fine Arts','We Read Together','AVID','Financial Aid','TI12','Web Graphics'];
@@ -955,8 +1030,7 @@ function setupTabs() {
 
 // ── DATA FETCH ───────────────────────────────────────────────────
 async function fetchAllData() {
-  // On first load, try to detect GIDs automatically
-  await Promise.all([fetchActiveProjects(), fetchCompletedProjects()]);
+  await Promise.all([fetchActiveProjects(), fetchCompletedProjects(), fetchNotes()]);
   updateLastSync();
 }
 
@@ -971,7 +1045,10 @@ async function refreshAll(btn) {
 const TAB_GIDS = {
   'Active Projects': '2066572307',
   'Completed Projects': '1795091806',
+  'Notes': '2136714643',
 };
+
+let notesMap = {}; // projectName → most recent note text
 
 function parseCSV(text) {
   // Robust CSV parser that handles quoted fields with commas/newlines
@@ -1109,6 +1186,26 @@ function updateLastSync() {
   document.getElementById('lastSync').textContent = `Synced ${h}:${String(m).padStart(2,'0')}`;
 }
 
+async function fetchNotes() {
+  try {
+    const rows = await fetchSheetTab('Notes');
+    // col0=Timestamp, col1=Project Name, col2=Notes
+    // Rows are in chronological order — iterate all and keep the last note per project name,
+    // so the most recently saved note always wins.
+    const map = {};
+    rows.forEach((r, i) => {
+      if (i === 0 && r[0] && r[0].toLowerCase() === 'timestamp') return; // skip header
+      const name = (r[1] || '').trim();
+      const note = (r[2] || '').trim();
+      if (name) map[name] = note; // later rows overwrite earlier ones
+    });
+    notesMap = map;
+  } catch (e) {
+    console.error('Error fetching notes:', e);
+    notesMap = {};
+  }
+}
+
 // ── KANBAN ───────────────────────────────────────────────────────
 const COL_CONFIG = [
   { status: 'High Priority', cls: 'col-high' },
@@ -1147,17 +1244,33 @@ function renderKanban() {
 function createCard(project) {
   const card = document.createElement('div');
   card.className = 'project-card';
+
+  const showMajor = project.major && project.major.toLowerCase() !== 'standalone';
+  const savedNote = notesMap[project.name] || '';
+  const hasNote = savedNote.trim().length > 0;
+
   card.innerHTML = `
     <div class="card-name">${escHtml(project.name)}</div>
     <div class="card-pills">
       ${project.category ? `<span class="pill pill-cat">${escHtml(project.category)}</span>` : ''}
-      ${project.major ? `<span class="pill pill-maj">${escHtml(project.major)}</span>` : ''}
+      ${showMajor ? `<span class="pill pill-maj">${escHtml(project.major)}</span>` : ''}
     </div>
     <div class="card-status-row">
       <select class="card-status-sel" data-project="${escHtml(project.name)}">
         ${STATUSES.map(s => `<option value="${s}" ${s === project.status ? 'selected' : ''}>${s}</option>`).join('')}
       </select>
       <button class="done-btn" data-project="${escHtml(project.name)}">✓ Done</button>
+    </div>
+    <button class="card-notes-toggle ${hasNote ? 'has-notes' : ''}">
+      <span class="toggle-arrow">▶</span>
+      ${hasNote ? 'Notes' : 'Add note'}
+    </button>
+    <div class="card-notes-body">
+      <textarea placeholder="Add notes, links, context…" rows="3">${escHtml(savedNote)}</textarea>
+      <div class="notes-save-row">
+        <button class="notes-save-btn">Save note</button>
+        <span class="notes-status"></span>
+      </div>
     </div>`;
 
   card.querySelector('.card-status-sel').addEventListener('change', function() {
@@ -1167,6 +1280,49 @@ function createCard(project) {
   });
 
   card.querySelector('.done-btn').addEventListener('click', () => openCompleteModal(project));
+
+  // Notes toggle
+  const toggle   = card.querySelector('.card-notes-toggle');
+  const body     = card.querySelector('.card-notes-body');
+  const textarea = card.querySelector('textarea');
+  const saveBtn  = card.querySelector('.notes-save-btn');
+  const statusEl = card.querySelector('.notes-status');
+
+  toggle.addEventListener('click', () => {
+    const isOpen = body.classList.toggle('open');
+    toggle.classList.toggle('open', isOpen);
+    if (isOpen) textarea.focus();
+  });
+
+  saveBtn.addEventListener('click', async () => {
+    const val = textarea.value.trim();
+    saveBtn.disabled = true;
+    statusEl.textContent = 'Saving…';
+    statusEl.style.color = 'var(--text3)';
+
+    const body2 = new URLSearchParams();
+    body2.append(F3.name, project.name);
+    body2.append(F3.note, val);
+
+    try {
+      await fetch(FORM3_URL, { method: 'POST', mode: 'no-cors', body: body2 });
+      // Update local notesMap so it reflects immediately without a full refresh
+      notesMap[project.name] = val;
+      const hasNoteNow = val.length > 0;
+      toggle.classList.toggle('has-notes', hasNoteNow);
+      // Update toggle label text (keep the arrow span, just update the text node)
+      toggle.childNodes[1].textContent = hasNoteNow ? ' Notes' : ' Add note';
+      statusEl.textContent = 'Saved ✓';
+      statusEl.style.color = 'var(--green)';
+      setTimeout(() => { statusEl.textContent = ''; }, 2500);
+    } catch (e) {
+      statusEl.textContent = 'Error — try again';
+      statusEl.style.color = 'var(--red)';
+    } finally {
+      saveBtn.disabled = false;
+    }
+  });
+
   return card;
 }
 
