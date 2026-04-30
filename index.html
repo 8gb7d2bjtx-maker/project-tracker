@@ -853,6 +853,11 @@
             </select>
           </div>
 
+          <div class="form-group">
+            <label for="add-notes">Notes <span style="color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
+            <textarea id="add-notes" placeholder="Add any notes, links, or context…" rows="3" style="resize:vertical;"></textarea>
+          </div>
+
           <button class="btn-primary" id="add-submit-btn" onclick="submitAddProject()">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
             Add Project to Sheet
@@ -1436,9 +1441,10 @@ async function submitAddProject() {
   const status = document.getElementById('add-status').value;
   const cat    = document.getElementById('add-category').value;
   const major  = document.getElementById('add-major').value;
+  const note   = document.getElementById('add-notes').value.trim();
 
   if (!name || !status || !cat || !major) {
-    showToast('Please fill all fields', 'error'); return;
+    showToast('Please fill all required fields', 'error'); return;
   }
 
   const btn = document.getElementById('add-submit-btn');
@@ -1448,12 +1454,24 @@ async function submitAddProject() {
   const url = `${APPS_SCRIPT_URL}?action=addActive&name=${encodeURIComponent(name)}&status=${encodeURIComponent(status)}&category=${encodeURIComponent(cat)}&major=${encodeURIComponent(major)}`;
 
   try {
+    // Always submit the project
     await fetch(url, { mode: 'no-cors' });
+
+    // If a note was entered, submit it too via Form 3
+    if (note) {
+      const noteBody = new URLSearchParams();
+      noteBody.append(F3.name, name);
+      noteBody.append(F3.note, note);
+      await fetch(FORM3_URL, { method: 'POST', mode: 'no-cors', body: noteBody });
+      notesMap[name] = note; // update local map immediately
+    }
+
     showToast(`"${name}" added successfully!`, 'success');
     document.getElementById('add-name').value = '';
     document.getElementById('add-status').value = '';
     document.getElementById('add-category').value = '';
     document.getElementById('add-major').value = '';
+    document.getElementById('add-notes').value = '';
     document.getElementById('cat-suggest').style.display = 'none';
     setTimeout(() => fetchActiveProjects(), 2500);
   } catch (e) {
