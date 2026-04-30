@@ -833,7 +833,7 @@
 
           <div class="form-group">
             <label for="add-name">Project Name</label>
-            <input type="text" id="add-name" placeholder="e.g. Spring 2025 Enrollment Brochure" autocomplete="off" oninput="autoSuggestCategory(this.value)">
+            <input type="text" id="add-name" placeholder="Name…" autocomplete="off" oninput="autoSuggestCategory(this.value)">
             <div id="cat-suggest" style="margin-top:6px; display:none;"></div>
           </div>
 
@@ -841,7 +841,7 @@
             <label for="add-status">Status</label>
             <select id="add-status">
               <option value="">Select status…</option>
-              <option>High Priority</option>
+              <option selected>High Priority</option>
               <option>1st Draft / Editing</option>
               <option>Mid Priority</option>
               <option>Low Priority</option>
@@ -1032,7 +1032,11 @@ function populateCategorySelect(id) {
 function populateMajorSelect(id) {
   const el = document.getElementById(id);
   el.innerHTML = '<option value="">Select major project…</option>';
-  MAJOR_PROJECTS.forEach(m => el.add(new Option(m, m)));
+  MAJOR_PROJECTS.forEach(m => {
+    const opt = new Option(m, m);
+    if (m === 'Standalone') opt.selected = true;
+    el.add(opt);
+  });
 }
 
 function populateModalSelects() {
@@ -1532,9 +1536,9 @@ async function submitAddProject() {
 
     showToast(`"${name}" added successfully!`, 'success');
     document.getElementById('add-name').value = '';
-    document.getElementById('add-status').value = '';
+    document.getElementById('add-status').value = 'High Priority';
     document.getElementById('add-category').value = '';
-    document.getElementById('add-major').value = '';
+    document.getElementById('add-major').value = 'Standalone';
     document.getElementById('add-notes').value = '';
     document.getElementById('cat-suggest').style.display = 'none';
     setTimeout(() => fetchActiveProjects(), 2500);
