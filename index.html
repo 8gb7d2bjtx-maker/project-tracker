@@ -1387,6 +1387,1575 @@ async function submitComplete() {
   btn.disabled = true;
   btn.innerHTML = '<div class="spinner" style="width:14px;height:14px;border-width:2px;"></div> Submitting…';
 
+  const url = `${APPS_SCRIPT_URL}?action=completeProject&name=${encodeURIComponent(currentModalProject.name)}&category=${encodeURIComponent(cat)}&month=${encodeURIComponent(month)}&major=${encodeURIComponent(major)}`;
+
+  try {
+    await fetch(url, { mode: 'no-cors' });
+    showToast(`"${currentModalProject.name}" marked complete!`, 'success');
+    closeModal();
+    activeProjects = activeProjects.filter(p => p.name !== currentModalProject?.name);
+    document.getElementById('count-active').textContent = activeProjects.length;
+    renderKanban();
+    setTimeout(() => fetchAllData(), 2500);
+  } catch (e) {
+    showToast('Submission failed — check connection', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Mark Complete';
+  }
+}
+
+// ── ADD PROJECT ──────────────────────────────────────────────────
+async function submitAddProject() {
+  const name   = document.getElementById('add-name').value.trim();
+  const status = document.getElementById('add-status').value;
+  const cat    = document.getElementById('add-category').value;
+  const major  = document.getElementById('add-major').value;
+
+  if (!name || !status || !cat || !major) {
+    showToast('Please fill all fields', 'error'); return;
+  }
+
+  const btn = document.getElementById('add-submit-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner" style="width:14px;height:14px;border-width:2px;margin-right:6px;"></div> Submitting…';
+
+  const url = `${APPS_SCRIPT_URL}?action=addActive&name=${encodeURIComponent(name)}&status=${encodeURIComponent(status)}&category=${encodeURIComponent(cat)}&major=${encodeURIComponent(major)}`;
+
+  try {
+    await fetch(url, { mode: 'no-cors' });
+    showToast(`"${name}" added successfully!`, 'success');
+    document.getElementById('add-name').value = '';
+    document.getElementById('add-status').value = '';
+    document.getElementById('add-category').value = '';
+    document.getElementById('add-major').value = '';
+    document.getElementById('cat-suggest').style.display = 'none';
+    setTimeout(() => fetchActiveProjects(), 2500);
+  } catch (e) {
+    showToast('Submission failed — check connection', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Add Project to Sheet';
+  }
+}
+
+function autoSuggestCategory(name) {
+  if (!name || name.length < 3) { document.getElementById('cat-suggest').style.display = 'none'; return; }
+  const lower = name.toLowerCase();
+  let match = null;
+  for (const [cat, keywords] of Object.entries(CAT_KEYWORDS)) {
+    if (keywords.some(k => lower.includes(k))) { match = cat; break; }
+  }
+  const el = document.getElementById('cat-suggest');
+  if (match) {
+    el.style.display = 'block';
+    el.innerHTML = `<span class="suggest-tag" onclick="document.getElementById('add-category').value='${match}'; this.parentElement.style.display='none';">
+      ✦ Suggested: ${match}
+    </span>`;
+  } else {
+    el.style.display = 'none';
+  }
+}
+
+// ── COMPLETED TABLE ──────────────────────────────────────────────
+function populateCompletedFilters() {
+  const months   = [...new Set(completedProjects.map(p => p.month).filter(Boolean))];
+  const cats     = [...new Set(completedProjects.map(p => p.category).filter(Boolean))].sort();
+  const majors   = [...new Set(completedProjects.map(p => p.major).filter(Boolean))].sort();
+
+  const mSel = document.getElementById('filter-month');
+  const cSel = document.getElementById('filter-category');
+  const mjSel= document.getElementById('filter-major');
+
+  mSel.innerHTML = '<option value="">All Months</option>';
+  // Keep chronological order based on MONTHS array
+  MONTHS.filter(m => months.includes(m)).forEach(m => mSel.add(new Option(m, m)));
+
+  cSel.innerHTML = '<option value="">All Categories</option>';
+  cats.forEach(c => cSel.add(new Option(c, c)));
+
+  mjSel.innerHTML = '<option value="">All Major Projects</option>';
+  majors.forEach(m => mjSel.add(new Option(m, m)));
+}
+
+function renderCompletedTable() {
+  const fMonth = document.getElementById('filter-month').value;
+  const fCat   = document.getElementById('filter-category').value;
+  const fMajor = document.getElementById('filter-major').value;
+
+  let filtered = completedProjects;
+  if (fMonth) filtered = filtered.filter(p => p.month === fMonth);
+  if (fCat)   filtered = filtered.filter(p => p.category === fCat);
+  if (fMajor) filtered = filtered.filter(p => p.major === fMajor);
+
+  const wrap = document.getElementById('completed-table-wrap');
+  if (filtered.length === 0) {
+    wrap.innerHTML = '<div class="empty-state">No completed projects found.</div>';
+    return;
+  }
+  wrap.innerHTML = `
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Project Name</th>
+          <th>Category</th>
+          <th>Major Project</th>
+          <th>Month Completed</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${filtered.map(p => `
+          <tr>
+            <td>${escHtml(p.name)}</td>
+            <td><span class="pill pill-cat">${escHtml(p.category)}</span></td>
+            <td><span class="pill pill-maj">${escHtml(p.major)}</span></td>
+            <td><span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text2)">${escHtml(p.month)}</span></td>
+          </tr>`).join('')}
+      </tbody>
+    </table>`;
+}
+
+function downloadCSV() {
+  const fMonth = document.getElementById('filter-month').value;
+  const fCat   = document.getElementById('filter-category').value;
+  const fMajor = document.getElementById('filter-major').value;
+  let data = completedProjects;
+  if (fMonth) data = data.filter(p => p.month === fMonth);
+  if (fCat)   data = data.filter(p => p.category === fCat);
+  if (fMajor) data = data.filter(p => p.major === fMajor);
+
+  const rows = [['Project Name','Category','Major Project','Month Completed'], ...data.map(p => [p.name, p.category, p.major, p.month])];
+  const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = 'risd-completed-projects.csv';
+  a.click();
+}
+
+// ── SUMMARY CHARTS ───────────────────────────────────────────────
+function renderSummary() {
+  const grid = document.getElementById('charts-grid');
+  if (completedProjects.length === 0) {
+    grid.innerHTML = '<div class="empty-state" style="padding:48px">No completed projects yet.</div>';
+    return;
+  }
+  grid.innerHTML = '';
+  grid.appendChild(buildChart('Completed by Month', countBy(completedProjects, 'month', MONTHS), '#7c6af7', '#5e50d4'));
+  grid.appendChild(buildChart('Completed by Category', countBy(completedProjects, 'category'), '#3ecf8e', '#2aaf76'));
+  grid.appendChild(buildChart('Completed by Major Project', countBy(completedProjects, 'major', MAJOR_PROJECTS), '#5ba4f5', '#3d8ce0'));
+}
+
+function countBy(arr, key, order) {
+  const counts = {};
+  arr.forEach(p => { const v = p[key] || 'Unknown'; counts[v] = (counts[v] || 0) + 1; });
+  const sorted = order
+    ? order.filter(k => counts[k]).map(k => [k, counts[k]])
+    : Object.entries(counts).sort((a,b) => b[1]-a[1]);
+  return sorted;
+}
+
+function buildChart(title, data, colorA, colorB) {
+  const card = document.createElement('div');
+  card.className = 'chart-card';
+  const max = data.length ? Math.max(...data.map(d => d[1])) : 1;
+  card.innerHTML = `
+    <h3>${title}</h3>
+    <div class="chart-inner">
+      ${data.map(([label, count], i) => {
+        const pct = Math.round((count / max) * 100);
+        const grad = `linear-gradient(90deg, ${colorA}, ${colorB})`;
+        return `<div class="bar-row">
+          <div class="bar-label" title="${escHtml(label)}">${escHtml(label)}</div>
+          <div class="bar-track">
+            <div class="bar-fill" style="width:${pct}%;background:${grad};opacity:${0.6+0.4*(i===0?1:count/max)}"></div>
+          </div>
+          <div class="bar-value">${count}</div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  return card;
+}
+
+// ── UTILITIES ─────────────────────────────────────────────────────
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+let toastTimer;
+function showToast(msg, type='') {
+  const t = document.getElementById('toast');
+  clearTimeout(toastTimer);
+  t.className = 'toast';
+  const icon = type === 'success'
+    ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>'
+    : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>';
+  t.innerHTML = icon + escHtml(msg);
+  void t.offsetWidth;
+  t.classList.add('show');
+  if (type) t.classList.add(type);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+// Close modal on overlay click
+document.getElementById('complete-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+</script>
+</body>
+</html>
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  /* ── LAYOUT ── */
+  .app-shell { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 56px;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 10;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .logo-mark {
+    width: 28px; height: 28px;
+    background: var(--accent);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    color: #fff;
+    letter-spacing: -0.5px;
+  }
+  .logo-text {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+    letter-spacing: 0.01em;
+  }
+  .logo-sub {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--text3);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .header-right {
+    display: flex; align-items: center; gap: 10px;
+  }
+  .refresh-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text2);
+    border-radius: var(--radius);
+    padding: 6px 12px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    cursor: pointer;
+    display: flex; align-items: center; gap: 6px;
+    transition: all var(--transition);
+  }
+  .refresh-btn:hover { background: var(--surface3); color: var(--text); border-color: var(--border2); }
+  .refresh-btn svg { transition: transform 0.6s ease; }
+  .refresh-btn.spinning svg { transform: rotate(360deg); }
+
+  .sync-indicator {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--text3);
+  }
+  .sync-dot {
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    margin-right: 5px;
+    animation: pulse 2.5s infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  /* ── TABS ── */
+  nav {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    display: flex;
+    gap: 2px;
+    flex-shrink: 0;
+  }
+  .tab-btn {
+    background: none;
+    border: none;
+    color: var(--text3);
+    padding: 10px 14px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    position: relative;
+    transition: color var(--transition);
+    white-space: nowrap;
+  }
+  .tab-btn::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--accent);
+    transform: scaleX(0);
+    transition: transform var(--transition);
+    border-radius: 2px 2px 0 0;
+  }
+  .tab-btn:hover { color: var(--text2); }
+  .tab-btn.active { color: var(--text); }
+  .tab-btn.active::after { transform: scaleX(1); }
+
+  .tab-count {
+    display: inline-flex;
+    align-items: center; justify-content: center;
+    background: var(--surface3);
+    color: var(--text3);
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 20px;
+    margin-left: 6px;
+    min-width: 20px;
+    transition: all var(--transition);
+  }
+  .tab-btn.active .tab-count {
+    background: var(--accent-glow);
+    color: var(--accent);
+  }
+
+  /* ── MAIN CONTENT ── */
+  main { flex: 1; overflow: hidden; position: relative; }
+  .tab-panel { display: none; height: 100%; overflow-y: auto; }
+  .tab-panel.active { display: flex; flex-direction: column; }
+
+  /* ── ADD PROJECT ── */
+  #tab-add { padding: 32px 24px; align-items: flex-start; }
+  .form-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 28px;
+    width: 100%;
+    max-width: 560px;
+  }
+  .form-card h2 {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 22px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .form-card h2 svg { color: var(--accent); }
+
+  .form-group { margin-bottom: 18px; }
+  label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text2);
+    margin-bottom: 6px;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+  }
+
+  input[type="text"], select, textarea {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    padding: 9px 12px;
+    transition: border-color var(--transition), box-shadow var(--transition);
+    outline: none;
+    -webkit-appearance: none;
+  }
+  input[type="text"]:focus, select:focus, textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+  }
+  select { cursor: pointer; }
+  select option { background: var(--surface2); }
+
+  .suggest-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--accent-glow);
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 20px;
+    margin-top: 6px;
+    cursor: pointer;
+    transition: all var(--transition);
+  }
+  .suggest-tag:hover { background: var(--accent); color: #fff; }
+
+  .custom-cat-row {
+    display: flex; gap: 8px; margin-top: 8px;
+  }
+  .custom-cat-row input { flex: 1; }
+  .custom-cat-row button {
+    background: var(--accent);
+    border: none;
+    color: #fff;
+    border-radius: var(--radius);
+    padding: 9px 14px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background var(--transition);
+  }
+  .custom-cat-row button:hover { background: var(--accent2); }
+
+  .btn-primary {
+    background: var(--accent);
+    border: none;
+    color: #fff;
+    border-radius: var(--radius);
+    padding: 10px 20px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition);
+    display: flex; align-items: center; gap: 8px;
+    width: 100%;
+    justify-content: center;
+    margin-top: 4px;
+  }
+  .btn-primary:hover { background: var(--accent2); }
+  .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .toast {
+    position: fixed;
+    bottom: 24px; left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius-lg);
+    padding: 12px 20px;
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 500;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+    z-index: 999;
+    transition: transform 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast.success { border-color: var(--green); }
+  .toast.error { border-color: var(--red); }
+
+  /* ── KANBAN ── */
+  #tab-active { flex-direction: column; overflow: hidden; }
+  .kanban-header {
+    padding: 16px 24px 12px;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .kanban-header h2 { font-size: 15px; font-weight: 600; }
+  .kanban-meta { font-size: 12px; color: var(--text3); font-family: 'DM Mono', monospace; }
+
+  .kanban-board {
+    display: flex;
+    gap: 12px;
+    padding: 0 24px 24px;
+    overflow-x: auto;
+    flex: 1;
+    align-items: flex-start;
+    padding-top: 4px;
+  }
+  .kanban-col {
+    flex: 0 0 240px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    display: flex;
+    flex-direction: column;
+    max-height: 100%;
+    overflow: hidden;
+  }
+  .kanban-col-header {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-shrink: 0;
+  }
+  .col-title {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    display: flex; align-items: center; gap: 7px;
+  }
+  .col-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .col-count {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--text3);
+    background: var(--surface2);
+    padding: 2px 7px;
+    border-radius: 20px;
+  }
+  .kanban-cards {
+    padding: 10px;
+    overflow-y: auto;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .kanban-empty {
+    text-align: center;
+    padding: 24px 12px;
+    color: var(--text3);
+    font-size: 12px;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .project-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px;
+    transition: border-color var(--transition), box-shadow var(--transition);
+    cursor: default;
+  }
+  .project-card:hover {
+    border-color: var(--border2);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+  }
+  .card-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 8px;
+    line-height: 1.4;
+  }
+  .card-pills {
+    display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 10px;
+  }
+  .pill {
+    font-size: 10px;
+    font-weight: 500;
+    padding: 2px 7px;
+    border-radius: 20px;
+    letter-spacing: 0.02em;
+  }
+  .pill-cat { background: var(--blue-bg); color: var(--blue); }
+  .pill-maj { background: var(--purple-bg); color: var(--purple); }
+
+  .card-status-row {
+    display: flex; gap: 6px; align-items: center;
+  }
+  .card-status-row select {
+    flex: 1;
+    font-size: 11px;
+    padding: 5px 8px;
+    background: var(--surface3);
+    border-color: var(--border);
+  }
+  .done-btn {
+    background: var(--green-bg);
+    border: 1px solid transparent;
+    color: var(--green);
+    border-radius: var(--radius);
+    padding: 5px 9px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .done-btn:hover {
+    background: var(--green);
+    color: #000;
+  }
+  .delete-btn {
+    background: none;
+    border: none;
+    color: var(--text3);
+    font-size: 14px;
+    line-height: 1;
+    padding: 4px 5px;
+    cursor: pointer;
+    border-radius: var(--radius);
+    transition: all var(--transition);
+    flex-shrink: 0;
+  }
+  .delete-btn:hover { color: var(--red); background: var(--red-bg); }
+
+  /* Notes */
+  .card-notes-toggle {
+    width: 100%;
+    background: none;
+    border: none;
+    border-top: 1px solid var(--border);
+    color: var(--text3);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px;
+    padding: 7px 0 0;
+    margin-top: 10px;
+    cursor: pointer;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: color var(--transition);
+  }
+  .card-notes-toggle:hover { color: var(--text2); }
+  .card-notes-toggle .toggle-arrow {
+    display: inline-block;
+    transition: transform 0.2s ease;
+    font-size: 9px;
+  }
+  .card-notes-toggle.open .toggle-arrow { transform: rotate(90deg); }
+  .card-notes-toggle.has-notes { color: var(--accent); }
+  .card-notes-toggle.has-notes:hover { color: var(--text); }
+
+  .card-notes-body {
+    display: none;
+    margin-top: 8px;
+  }
+  .card-notes-body.open { display: block; }
+  .card-notes-body textarea {
+    width: 100%;
+    background: var(--surface3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    padding: 8px 10px;
+    resize: vertical;
+    min-height: 64px;
+    outline: none;
+    transition: border-color var(--transition);
+    line-height: 1.5;
+  }
+  .card-notes-body textarea:focus { border-color: var(--accent); }
+  .card-notes-body textarea::placeholder { color: var(--text3); }
+  .notes-save-row {
+    display: flex; align-items: center; gap: 8px; margin-top: 6px;
+  }
+  .notes-save-btn {
+    background: var(--accent);
+    border: none;
+    color: #fff;
+    border-radius: var(--radius);
+    padding: 5px 12px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background var(--transition);
+  }
+  .notes-save-btn:hover { background: var(--accent2); }
+  .notes-save-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .notes-status {
+    font-size: 11px;
+    font-family: 'DM Mono', monospace;
+    transition: color var(--transition);
+  }
+
+  /* Column color themes */
+  .col-high .col-dot { background: var(--red); }
+  .col-high .col-title { color: var(--red); }
+  .col-draft .col-dot { background: var(--yellow); }
+  .col-draft .col-title { color: var(--yellow); }
+  .col-mid .col-dot { background: var(--orange); }
+  .col-mid .col-title { color: var(--orange); }
+  .col-low .col-dot { background: var(--blue); }
+  .col-low .col-title { color: var(--blue); }
+  .col-wait .col-dot { background: var(--text3); }
+  .col-wait .col-title { color: var(--text2); }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.65);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    backdrop-filter: blur(4px);
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius-lg);
+    padding: 28px;
+    width: 100%;
+    max-width: 440px;
+    box-shadow: 0 24px 64px rgba(0,0,0,0.5);
+    animation: modal-in 0.2s cubic-bezier(0.34,1.2,0.64,1);
+  }
+  @keyframes modal-in { from { transform: scale(0.94); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .modal h3 { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+  .modal-sub { font-size: 12px; color: var(--text3); margin-bottom: 22px; font-family: 'DM Mono', monospace; }
+  .modal-name {
+    font-weight: 600;
+    color: var(--accent);
+    font-size: 13px;
+    background: var(--accent-glow);
+    border-radius: var(--radius);
+    padding: 8px 12px;
+    margin-bottom: 18px;
+  }
+  .modal-footer {
+    display: flex; gap: 10px; margin-top: 22px;
+  }
+  .btn-cancel {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text2);
+    border-radius: var(--radius);
+    padding: 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all var(--transition);
+  }
+  .btn-cancel:hover { background: var(--surface3); color: var(--text); }
+  .btn-confirm {
+    flex: 2;
+    background: var(--green);
+    border: none;
+    color: #000;
+    border-radius: var(--radius);
+    padding: 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition);
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+  }
+  .btn-confirm:hover { background: #2db87a; }
+  .btn-confirm:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* ── COMPLETED ── */
+  #tab-completed { padding: 24px; }
+  .section-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 18px;
+  }
+  .section-header h2 { font-size: 15px; font-weight: 600; }
+  .filter-row {
+    display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 18px;
+  }
+  .filter-row select {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    padding: 8px 12px;
+    cursor: pointer;
+    min-width: 160px;
+  }
+  .filter-row select:focus { outline: none; border-color: var(--accent); }
+  .btn-csv {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text2);
+    border-radius: var(--radius);
+    padding: 8px 14px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    cursor: pointer;
+    display: flex; align-items: center; gap: 6px;
+    margin-left: auto;
+    transition: all var(--transition);
+  }
+  .btn-csv:hover { background: var(--surface3); color: var(--text); border-color: var(--border2); }
+
+  .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  .data-table th {
+    text-align: left;
+    padding: 10px 14px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text3);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    position: sticky;
+    top: 0;
+    z-index: 1;
+  }
+  .data-table td {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+    vertical-align: middle;
+  }
+  .data-table tr:hover td { background: var(--surface2); }
+  .data-table tr:last-child td { border-bottom: none; }
+  .table-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    overflow-x: auto;
+  }
+  .empty-state {
+    text-align: center;
+    padding: 48px 24px;
+    color: var(--text3);
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+  }
+
+  /* ── SUMMARY ── */
+  #tab-summary { padding: 24px; }
+  .charts-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+    max-width: 860px;
+  }
+  .chart-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 22px;
+  }
+  .chart-card h3 {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text2);
+    margin-bottom: 18px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .chart-inner { display: flex; flex-direction: column; gap: 8px; }
+  .bar-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .bar-label {
+    font-size: 12px;
+    color: var(--text2);
+    min-width: 160px;
+    text-align: right;
+    flex-shrink: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .bar-track {
+    flex: 1;
+    height: 22px;
+    background: var(--surface2);
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.6s cubic-bezier(0.16,1,0.3,1);
+    min-width: 2px;
+  }
+  .bar-value {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--text3);
+    min-width: 24px;
+    text-align: left;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text3); }
+
+  /* Loading spinner */
+  .loading {
+    display: flex; align-items: center; justify-content: center;
+    padding: 48px;
+    color: var(--text3);
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    gap: 10px;
+    flex-direction: column;
+  }
+  .spinner {
+    width: 24px; height: 24px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <header>
+    <div class="logo">
+      <div class="logo-mark">RT</div>
+      <div>
+        <div class="logo-text">RISD Project Tracker</div>
+        <div class="logo-sub">Graphic Design</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <span class="sync-indicator"><span class="sync-dot"></span><span id="lastSync">Never synced</span></span>
+      <button class="refresh-btn" onclick="refreshAll(this)">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 .49-3"></path></svg>
+        Refresh
+      </button>
+    </div>
+  </header>
+
+  <nav>
+    <button class="tab-btn active" data-tab="active">Active Projects <span class="tab-count" id="count-active">—</span></button>
+    <button class="tab-btn" data-tab="add">+ Add Project</button>
+    <button class="tab-btn" data-tab="completed">Completed <span class="tab-count" id="count-completed">—</span></button>
+    <button class="tab-btn" data-tab="summary">Summary</button>
+  </nav>
+
+  <main>
+    <!-- ADD PROJECT -->
+    <div class="tab-panel" id="tab-add">
+      <div style="padding: 32px 24px;">
+        <div class="form-card">
+          <h2>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
+            New Active Project
+          </h2>
+
+          <div class="form-group">
+            <label for="add-name">Project Name</label>
+            <input type="text" id="add-name" placeholder="e.g. Spring 2025 Enrollment Brochure" autocomplete="off" oninput="autoSuggestCategory(this.value)">
+            <div id="cat-suggest" style="margin-top:6px; display:none;"></div>
+          </div>
+
+          <div class="form-group">
+            <label for="add-status">Status</label>
+            <select id="add-status">
+              <option value="">Select status…</option>
+              <option>High Priority</option>
+              <option>1st Draft / Editing</option>
+              <option>Mid Priority</option>
+              <option>Low Priority</option>
+              <option>Waiting on Information</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="add-category">Category</label>
+            <select id="add-category">
+              <option value="">Select category…</option>
+            </select>
+            <div class="custom-cat-row">
+              <input type="text" id="custom-cat-input" placeholder="Add custom category…">
+              <button onclick="addCustomCategory()">Add</button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="add-major">Major Project</label>
+            <select id="add-major">
+              <option value="">Select major project…</option>
+            </select>
+          </div>
+
+          <button class="btn-primary" id="add-submit-btn" onclick="submitAddProject()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            Add Project to Sheet
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ACTIVE PROJECTS -->
+    <div class="tab-panel active" id="tab-active">
+      <div class="kanban-header">
+        <h2>Active Projects</h2>
+        <span class="kanban-meta" id="active-meta">Loading…</span>
+      </div>
+      <div class="kanban-board" id="kanban-board">
+        <div class="loading"><div class="spinner"></div>Loading projects…</div>
+      </div>
+    </div>
+
+    <!-- COMPLETED -->
+    <div class="tab-panel" id="tab-completed">
+      <div class="section-header">
+        <h2>Completed Projects</h2>
+        <button class="btn-csv" onclick="downloadCSV()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+          Export CSV
+        </button>
+      </div>
+      <div class="filter-row" id="filter-row">
+        <select id="filter-month" onchange="renderCompletedTable()"><option value="">All Months</option></select>
+        <select id="filter-category" onchange="renderCompletedTable()"><option value="">All Categories</option></select>
+        <select id="filter-major" onchange="renderCompletedTable()"><option value="">All Major Projects</option></select>
+      </div>
+      <div class="table-wrap">
+        <div id="completed-table-wrap">
+          <div class="loading"><div class="spinner"></div>Loading…</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SUMMARY -->
+    <div class="tab-panel" id="tab-summary">
+      <div class="section-header">
+        <h2>Summary</h2>
+      </div>
+      <div class="charts-grid" id="charts-grid">
+        <div class="loading"><div class="spinner"></div>Loading data…</div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- COMPLETE MODAL -->
+<div class="modal-overlay" id="complete-modal">
+  <div class="modal">
+    <h3>Mark as Complete</h3>
+    <div class="modal-sub">Confirm details before submitting to Google Sheets</div>
+    <div class="modal-name" id="modal-project-name">—</div>
+
+    <div class="form-group">
+      <label for="modal-category">Category</label>
+      <select id="modal-category"></select>
+    </div>
+    <div class="form-group">
+      <label for="modal-month">Month / Year Completed</label>
+      <select id="modal-month"></select>
+    </div>
+    <div class="form-group">
+      <label for="modal-major">Major Project</label>
+      <select id="modal-major"></select>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+      <button class="btn-confirm" id="modal-confirm-btn" onclick="submitComplete()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+        Mark Complete
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── CONFIG ──────────────────────────────────────────────────────
+const SHEET_ID = '1X0h3QfumXPgfnSB6FzoT7ZsAgjulSWAe1efDRdYkCN0';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby_TS3HiRH9tipl9TkkBoTjtUru9vg_WlKl5zPK3S55esM37h-tpXhw21f5o84oGtbgrA/exec';
+const FORM1_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSevCkOpfjUPWGcPQWnt6_s5DzpxzprLYkATiRkpRkscQdKoDg/formResponse';
+const FORM2_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSfHifjPEa-deGDssRYE8ATSs7ESyAwmMHz0Hwc3x4iq8HGI8g/formResponse';
+const FORM3_URL = 'https://docs.google.com/forms/d/e/1FAIpQLScvZfqA1Keik3QtAZDM_uIlARxwFCUUsmLLjNMRwPE9-xCq-A/formResponse';
+const F1 = { name:'entry.1936166445', status:'entry.958776253', category:'entry.748617586', major:'entry.193485853' };
+const F2 = { name:'entry.1936166445', category:'entry.748617586', month:'entry.193485853', major:'entry.1295486583' };
+const F3 = { name:'entry.1598157101', note:'entry.1545699935' };
+
+const STATUSES = ['High Priority','1st Draft / Editing','Mid Priority','Low Priority','Waiting on Information'];
+const MAJOR_PROJECTS = ['Standalone','Bond','Enrollment','Magnet','Center Stage','Dream Big','WWYLS','Legends & Legacies','Teacher of the Year','Dual Language Schools','CTE','Fine Arts','We Read Together','AVID','Financial Aid','TI12','Web Graphics'];
+const BASE_CATEGORIES = ['Advertising','Apparel & Merchandise','Certificates & Awards','Digital & Web Assets','Environmental Graphics','Event Graphics','Infographics & Data Visualization','Logo / Brand Identity','Multipage Booklet','Photo & Video','Print Collateral & Flyers','Signage & Banners','Slide Decks & Presentations','Social Media & Web Graphics','Update / Revision','Other'];
+const MONTHS = [];
+const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+// Generate months July 2025 – December 2026
+for (let y = 2025; y <= 2026; y++) {
+  const start = (y === 2025) ? 6 : 0;
+  const end   = (y === 2026) ? 11 : 11;
+  for (let m = start; m <= end; m++) MONTHS.push(`${MONTH_NAMES[m]} ${y}`);
+}
+
+// Keyword → category suggestions
+const CAT_KEYWORDS = {
+  'Advertising': ['ad','ads','campaign','billboard','newspaper','magazine'],
+  'Apparel & Merchandise': ['shirt','apparel','merch','merchandise','tshirt','hoodie','hat'],
+  'Certificates & Awards': ['certificate','award','diploma','recognition','honor'],
+  'Digital & Web Assets': ['web','website','digital','online','html','email','banner','icon','ui'],
+  'Environmental Graphics': ['wayfinding','mural','wall','signage','environmental','room'],
+  'Event Graphics': ['event','gala','ceremony','fair','expo','conference','summit','program'],
+  'Infographics & Data Visualization': ['infographic','data','chart','graph','stats','report','annual'],
+  'Logo / Brand Identity': ['logo','brand','identity','mark','rebrand'],
+  'Multipage Booklet': ['booklet','brochure','book','guide','magazine','catalog','catalogue','view book'],
+  'Photo & Video': ['photo','video','film','reel','shoot','photography'],
+  'Print Collateral & Flyers': ['flyer','flier','postcard','mailer','handout','print','poster'],
+  'Signage & Banners': ['banner','sign','flag','vinyl','display','stand'],
+  'Slide Decks & Presentations': ['slide','presentation','deck','powerpoint','keynote'],
+  'Social Media & Web Graphics': ['social','instagram','facebook','twitter','linkedin','post','story','reel','web graphic'],
+  'Update / Revision': ['update','revision','revise','edit','fix','change','refresh'],
+};
+
+let categories = [...BASE_CATEGORIES];
+let activeProjects = [];
+let completedProjects = [];
+let currentModalProject = null;
+
+// ── INIT ─────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  populateSelects();
+  populateModalSelects();
+  fetchAllData();
+  setupTabs();
+});
+
+function populateSelects() {
+  populateCategorySelect('add-category');
+  populateMajorSelect('add-major');
+  MONTHS.forEach(m => {
+    document.getElementById('filter-month').add(new Option(m, m));
+  });
+}
+
+function populateCategorySelect(id) {
+  const el = document.getElementById(id);
+  const current = el.value;
+  el.innerHTML = '<option value="">Select category…</option>';
+  categories.forEach(c => el.add(new Option(c, c)));
+  if (current) el.value = current;
+}
+
+function populateMajorSelect(id) {
+  const el = document.getElementById(id);
+  el.innerHTML = '<option value="">Select major project…</option>';
+  MAJOR_PROJECTS.forEach(m => el.add(new Option(m, m)));
+}
+
+function populateModalSelects() {
+  populateCategorySelect('modal-category');
+  const mm = document.getElementById('modal-month');
+  mm.innerHTML = '<option value="">Select month…</option>';
+  MONTHS.forEach(m => mm.add(new Option(m, m)));
+  populateMajorSelect('modal-major');
+}
+
+function addCustomCategory() {
+  const input = document.getElementById('custom-cat-input');
+  const val = input.value.trim();
+  if (!val || categories.includes(val)) return;
+  categories.push(val);
+  populateCategorySelect('add-category');
+  populateCategorySelect('modal-category');
+  document.getElementById('add-category').value = val;
+  input.value = '';
+  showToast('Custom category added: ' + val, 'success');
+}
+
+// ── TABS ─────────────────────────────────────────────────────────
+function setupTabs() {
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+    });
+  });
+}
+
+// ── DATA FETCH ───────────────────────────────────────────────────
+async function fetchAllData() {
+  await Promise.all([fetchActiveProjects(), fetchCompletedProjects(), fetchNotes()]);
+  updateLastSync();
+}
+
+async function refreshAll(btn) {
+  if (btn) { btn.classList.add('spinning'); }
+  await fetchAllData();
+  setTimeout(() => { if (btn) btn.classList.remove('spinning'); }, 700);
+}
+
+// Tab GIDs — find these by clicking each tab in Google Sheets and copying the #gid=XXXX from the URL.
+// Defaults below will be auto-detected if wrong.
+const TAB_GIDS = {
+  'Active Projects': '2066572307',
+  'Completed Projects': '1795091806',
+  'Notes': '2136714643',
+};
+
+let notesMap = {}; // projectName → most recent note text
+
+function parseCSV(text) {
+  // Robust CSV parser that handles quoted fields with commas/newlines
+  const rows = [];
+  let row = [], field = '', inQuotes = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i], next = text[i+1];
+    if (inQuotes) {
+      if (ch === '"' && next === '"') { field += '"'; i++; }
+      else if (ch === '"') { inQuotes = false; }
+      else { field += ch; }
+    } else {
+      if (ch === '"') { inQuotes = true; }
+      else if (ch === ',') { row.push(field.trim()); field = ''; }
+      else if (ch === '\r' && next === '\n') { row.push(field.trim()); rows.push(row); row = []; field = ''; i++; }
+      else if (ch === '\n' || ch === '\r') { row.push(field.trim()); rows.push(row); row = []; field = ''; }
+      else { field += ch; }
+    }
+  }
+  if (field || row.length) { row.push(field.trim()); rows.push(row); }
+  return rows.filter(r => r.some(c => c !== ''));
+}
+
+async function fetchSheetCSV(gid) {
+  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${gid}`;
+  const res = await fetch(url, { redirect: 'follow' });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const text = await res.text();
+  // If we got redirected to a login page, the response will be HTML
+  if (text.trim().startsWith('<!')) throw new Error('Got HTML — sheet may not be public');
+  return parseCSV(text);
+}
+
+async function discoverGid(tabName) {
+  // Fetch the sheet HTML page and extract gid from tab links
+  try {
+    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit`;
+    const res = await fetch(url, { redirect: 'follow' });
+    const text = await res.text();
+    // Look for gid patterns associated with the tab name
+    const escaped = tabName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const patterns = [
+      new RegExp(`gid=(\\d+)[^>]*>\\s*${escaped}`, 'i'),
+      new RegExp(`${escaped}[^<]*<[^>]+gid=(\\d+)`, 'i'),
+    ];
+    for (const p of patterns) {
+      const m = text.match(p);
+      if (m) return m[1];
+    }
+  } catch(e) { /* ignore */ }
+  return null;
+}
+
+async function fetchSheetTab(tabName) {
+  const gid = TAB_GIDS[tabName];
+  if (!gid) throw new Error(`No GID configured for tab "${tabName}"`);
+  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${gid}`;
+  const res = await fetch(url, { redirect: 'follow' });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const text = await res.text();
+  if (text.trim().startsWith('<!')) throw new Error('Got HTML — make sure the sheet is shared as "Anyone with the link can view"');
+  return parseCSV(text);
+}
+
+async function discoverGid(tabName) {
+  try {
+    const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit`;
+    const res = await fetch(url, { redirect: 'follow' });
+    const text = await res.text();
+    const escaped = tabName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const patterns = [
+      new RegExp(`gid=(\\d+)[^>]*>\\s*${escaped}`, 'i'),
+      new RegExp(`${escaped}[^<]*<[^>]+gid=(\\d+)`, 'i'),
+    ];
+    for (const p of patterns) {
+      const m = text.match(p);
+      if (m) return m[1];
+    }
+  } catch(e) { /* ignore */ }
+  return null;
+}
+
+async function fetchActiveProjects() {
+  try {
+    const rows = await fetchSheetTab('Active Projects');
+    // Google Forms prepends a Timestamp column (col 0), so data starts at col 1:
+    // col0=Timestamp, col1=Project Name, col2=Status, col3=Category, col4=Major Project
+    const dataRows = rows.filter((r, i) => {
+      // Skip header row (gviz sometimes includes it); detect by "timestamp" or "project name" in first cell
+      if (i === 0 && r[0] && (r[0].toLowerCase() === 'timestamp' || r[0].toLowerCase() === 'project name')) return false;
+      return r[1] && r[1].trim() !== ''; // col1 = Project Name must be non-empty
+    });
+    activeProjects = dataRows.map(r => ({
+      name: r[1] || '',
+      status: r[2] || 'Mid Priority',
+      category: r[3] || '',
+      major: r[4] || '',
+    }));
+    document.getElementById('count-active').textContent = activeProjects.length;
+    document.getElementById('active-meta').textContent = `${activeProjects.length} project${activeProjects.length !== 1 ? 's' : ''} across ${STATUSES.length} columns`;
+    renderKanban();
+  } catch (e) {
+    console.error('Error fetching active projects:', e);
+    document.getElementById('kanban-board').innerHTML = `<div class="loading" style="color:var(--red)">⚠ Could not load projects: ${e.message}<br><span style="font-size:11px;margin-top:8px;display:block">Make sure your sheet is shared as "Anyone with the link can view"</span></div>`;
+  }
+}
+
+async function fetchCompletedProjects() {
+  try {
+    const rows = await fetchSheetTab('Completed Projects');
+    // Google Forms prepends Timestamp (col 0):
+    // col0=Timestamp, col1=Project Name, col2=Category, col3=Month/Year Completed, col4=Major Project
+    const dataRows = rows.filter((r, i) => {
+      if (i === 0 && r[0] && (r[0].toLowerCase() === 'timestamp' || r[0].toLowerCase() === 'project name')) return false;
+      return r[1] && r[1].trim() !== ''; // col1 = Project Name
+    });
+    completedProjects = dataRows.map(r => ({
+      name: r[1] || '',
+      category: r[2] || '',
+      month: r[3] || '',
+      major: r[4] || '',
+    }));
+    document.getElementById('count-completed').textContent = completedProjects.length;
+    populateCompletedFilters();
+    renderCompletedTable();
+    renderSummary();
+  } catch (e) {
+    console.error('Error fetching completed projects:', e);
+  }
+}
+
+function updateLastSync() {
+  const now = new Date();
+  const h = now.getHours(), m = now.getMinutes();
+  document.getElementById('lastSync').textContent = `Synced ${h}:${String(m).padStart(2,'0')}`;
+}
+
+async function fetchNotes() {
+  try {
+    const rows = await fetchSheetTab('Notes');
+    // col0=Timestamp, col1=Project Name, col2=Notes
+    // Rows are in chronological order — iterate all and keep the last note per project name,
+    // so the most recently saved note always wins.
+    const map = {};
+    rows.forEach((r, i) => {
+      if (i === 0 && r[0] && r[0].toLowerCase() === 'timestamp') return; // skip header
+      const name = (r[1] || '').trim();
+      const note = (r[2] || '').trim();
+      if (name) map[name] = note; // later rows overwrite earlier ones
+    });
+    notesMap = map;
+  } catch (e) {
+    console.error('Error fetching notes:', e);
+    notesMap = {};
+  }
+}
+
+// ── KANBAN ───────────────────────────────────────────────────────
+const COL_CONFIG = [
+  { status: 'High Priority', cls: 'col-high' },
+  { status: '1st Draft / Editing', cls: 'col-draft' },
+  { status: 'Mid Priority', cls: 'col-mid' },
+  { status: 'Low Priority', cls: 'col-low' },
+  { status: 'Waiting on Information', cls: 'col-wait' },
+];
+
+function renderKanban() {
+  const board = document.getElementById('kanban-board');
+  board.innerHTML = '';
+
+  COL_CONFIG.forEach(col => {
+    const projects = activeProjects.filter(p => p.status === col.status);
+    const colEl = document.createElement('div');
+    colEl.className = `kanban-col ${col.cls}`;
+    colEl.innerHTML = `
+      <div class="kanban-col-header">
+        <div class="col-title"><div class="col-dot"></div>${col.status}</div>
+        <div class="col-count">${projects.length}</div>
+      </div>
+      <div class="kanban-cards" id="col-${col.status.replace(/\W+/g,'-')}">
+        ${projects.length === 0 ? '<div class="kanban-empty">Empty</div>' : ''}
+      </div>`;
+    board.appendChild(colEl);
+
+    const cardsEl = colEl.querySelector('.kanban-cards');
+    projects.forEach(p => {
+      const card = createCard(p);
+      cardsEl.appendChild(card);
+    });
+  });
+}
+
+function createCard(project) {
+  const card = document.createElement('div');
+  card.className = 'project-card';
+
+  const showMajor = project.major && project.major.toLowerCase() !== 'standalone';
+  const savedNote = notesMap[project.name] || '';
+  const hasNote = savedNote.trim().length > 0;
+
+  card.innerHTML = `
+    <div class="card-name">${escHtml(project.name)}</div>
+    <div class="card-pills">
+      ${project.category ? `<span class="pill pill-cat">${escHtml(project.category)}</span>` : ''}
+      ${showMajor ? `<span class="pill pill-maj">${escHtml(project.major)}</span>` : ''}
+    </div>
+    <div class="card-status-row">
+      <select class="card-status-sel" data-project="${escHtml(project.name)}">
+        ${STATUSES.map(s => `<option value="${s}" ${s === project.status ? 'selected' : ''}>${s}</option>`).join('')}
+      </select>
+      <button class="done-btn" data-project="${escHtml(project.name)}">✓ Done</button>
+      <button class="delete-btn" title="Remove project">✕</button>
+    </div>
+    <button class="card-notes-toggle ${hasNote ? 'has-notes' : ''}">
+      <span class="toggle-arrow">▶</span>
+      ${hasNote ? 'Notes' : 'Add note'}
+    </button>
+    <div class="card-notes-body">
+      <textarea placeholder="Add notes, links, context…" rows="3">${escHtml(savedNote)}</textarea>
+      <div class="notes-save-row">
+        <button class="notes-save-btn">Save note</button>
+        <span class="notes-status"></span>
+      </div>
+    </div>`;
+
+  card.querySelector('.card-status-sel').addEventListener('change', function() {
+    const proj = activeProjects.find(p => p.name === project.name);
+    if (proj) proj.status = this.value;
+    renderKanban();
+  });
+
+  card.querySelector('.done-btn').addEventListener('click', () => openCompleteModal(project));
+
+  // Delete (remove without completing)
+  card.querySelector('.delete-btn').addEventListener('click', async () => {
+    if (!confirm(`Remove "${project.name}" from Active Projects?\n\nThis cannot be undone.`)) return;
+    const url = `${APPS_SCRIPT_URL}?action=deleteActive&name=${encodeURIComponent(project.name)}`;
+    try {
+      await fetch(url, { mode: 'no-cors' });
+      activeProjects = activeProjects.filter(p => p.name !== project.name);
+      document.getElementById('count-active').textContent = activeProjects.length;
+      renderKanban();
+      showToast(`"${project.name}" removed`, 'success');
+    } catch(e) {
+      showToast('Could not remove project — try again', 'error');
+    }
+  });
+
+  // Notes toggle
+  const toggle   = card.querySelector('.card-notes-toggle');
+  const body     = card.querySelector('.card-notes-body');
+  const textarea = card.querySelector('textarea');
+  const saveBtn  = card.querySelector('.notes-save-btn');
+  const statusEl = card.querySelector('.notes-status');
+
+  toggle.addEventListener('click', () => {
+    const isOpen = body.classList.toggle('open');
+    toggle.classList.toggle('open', isOpen);
+    if (isOpen) textarea.focus();
+  });
+
+  saveBtn.addEventListener('click', async () => {
+    const val = textarea.value.trim();
+    saveBtn.disabled = true;
+    statusEl.textContent = 'Saving…';
+    statusEl.style.color = 'var(--text3)';
+
+    const body2 = new URLSearchParams();
+    body2.append(F3.name, project.name);
+    body2.append(F3.note, val);
+
+    try {
+      await fetch(FORM3_URL, { method: 'POST', mode: 'no-cors', body: body2 });
+      // Update local notesMap so it reflects immediately without a full refresh
+      notesMap[project.name] = val;
+      const hasNoteNow = val.length > 0;
+      toggle.classList.toggle('has-notes', hasNoteNow);
+      // Update toggle label text (keep the arrow span, just update the text node)
+      toggle.childNodes[1].textContent = hasNoteNow ? ' Notes' : ' Add note';
+      statusEl.textContent = 'Saved ✓';
+      statusEl.style.color = 'var(--green)';
+      setTimeout(() => { statusEl.textContent = ''; }, 2500);
+    } catch (e) {
+      statusEl.textContent = 'Error — try again';
+      statusEl.style.color = 'var(--red)';
+    } finally {
+      saveBtn.disabled = false;
+    }
+  });
+
+  return card;
+}
+
+// ── COMPLETE MODAL ───────────────────────────────────────────────
+function openCompleteModal(project) {
+  currentModalProject = project;
+  document.getElementById('modal-project-name').textContent = project.name;
+  populateModalSelects();
+  if (project.category) document.getElementById('modal-category').value = project.category;
+  if (project.major) document.getElementById('modal-major').value = project.major;
+  // Default to current month
+  const now = new Date();
+  const guess = `${MONTH_NAMES[now.getMonth()]} ${now.getFullYear()}`;
+  const mSel = document.getElementById('modal-month');
+  if ([...mSel.options].some(o => o.value === guess)) mSel.value = guess;
+  document.getElementById('complete-modal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('complete-modal').classList.remove('open');
+  currentModalProject = null;
+}
+
+async function submitComplete() {
+  if (!currentModalProject) return;
+  const cat = document.getElementById('modal-category').value;
+  const month = document.getElementById('modal-month').value;
+  const major = document.getElementById('modal-major').value;
+  if (!cat || !month || !major) { showToast('Please fill all fields', 'error'); return; }
+
+  const btn = document.getElementById('modal-confirm-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner" style="width:14px;height:14px;border-width:2px;"></div> Submitting…';
+
   const body = new URLSearchParams();
   body.append(F2.name, currentModalProject.name);
   body.append(F2.category, cat);
