@@ -793,6 +793,117 @@
     animation: spin 0.7s linear infinite;
   }
   @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── SETTINGS ── */
+  #tab-settings { padding: 0; overflow-y: auto; }
+  .settings-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    width: 360px;
+    flex-shrink: 0;
+  }
+  .settings-card-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+  }
+  .settings-add-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .settings-add-row input {
+    flex: 1;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    padding: 8px 10px;
+    outline: none;
+    transition: border-color var(--transition);
+  }
+  .settings-add-row input:focus { border-color: var(--accent); }
+  .settings-add-row button {
+    background: var(--accent);
+    border: none;
+    color: #fff;
+    border-radius: var(--radius);
+    padding: 8px 14px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background var(--transition);
+    white-space: nowrap;
+  }
+  .settings-add-row button:hover { background: var(--accent2); }
+
+  .settings-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-height: 420px;
+    overflow-y: auto;
+  }
+  .settings-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 8px;
+    border-radius: var(--radius);
+    background: var(--surface2);
+    border: 1px solid transparent;
+    transition: border-color var(--transition);
+  }
+  .settings-item:hover { border-color: var(--border); }
+  .settings-item-name {
+    flex: 1;
+    font-size: 13px;
+    color: var(--text);
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .settings-item input.edit-input {
+    flex: 1;
+    background: var(--surface3);
+    border: 1px solid var(--accent);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    padding: 3px 7px;
+    outline: none;
+  }
+  .settings-item-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 12px;
+    padding: 3px 6px;
+    border-radius: var(--radius);
+    transition: all var(--transition);
+    color: var(--text3);
+    flex-shrink: 0;
+  }
+  .settings-item-btn.edit { }
+  .settings-item-btn.edit:hover { color: var(--accent); background: var(--accent-glow); }
+  .settings-item-btn.save { color: var(--green); }
+  .settings-item-btn.save:hover { background: var(--green-bg); }
+  .settings-item-btn.cancel { color: var(--text3); }
+  .settings-item-btn.cancel:hover { color: var(--text); background: var(--surface3); }
+  .settings-item-btn.delete:hover { color: var(--red); background: var(--red-bg); }
 </style>
 </head>
 <body>
@@ -819,6 +930,7 @@
     <button class="tab-btn" data-tab="add">+ Add Project</button>
     <button class="tab-btn" data-tab="completed">Completed <span class="tab-count" id="count-completed">—</span></button>
     <button class="tab-btn" data-tab="summary">Summary</button>
+    <button class="tab-btn" data-tab="settings">⚙ Settings</button>
   </nav>
 
   <main>
@@ -925,6 +1037,39 @@
         <div class="loading"><div class="spinner"></div>Loading data…</div>
       </div>
     </div>
+
+    <!-- SETTINGS -->
+    <div class="tab-panel" id="tab-settings">
+      <div style="padding: 32px 24px; display: flex; gap: 24px; flex-wrap: wrap; align-items: flex-start;">
+
+        <!-- Categories -->
+        <div class="settings-card">
+          <h2 class="settings-card-title">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="3"/><path d="M17 17l-4-4"/><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+            Categories
+          </h2>
+          <div class="settings-add-row">
+            <input type="text" id="new-cat-input" placeholder="New category…">
+            <button onclick="settingsAddCategory()">Add</button>
+          </div>
+          <div class="settings-list" id="settings-cat-list"></div>
+        </div>
+
+        <!-- Major Projects -->
+        <div class="settings-card">
+          <h2 class="settings-card-title">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h18v4H3z"/><path d="M3 10h12v4H3z"/><path d="M3 17h8v4H3z"/></svg>
+            Major Projects
+          </h2>
+          <div class="settings-add-row">
+            <input type="text" id="new-major-input" placeholder="New major project…">
+            <button onclick="settingsAddMajor()">Add</button>
+          </div>
+          <div class="settings-list" id="settings-major-list"></div>
+        </div>
+
+      </div>
+    </div>
   </main>
 </div>
 
@@ -1010,11 +1155,14 @@ let completedProjects = [];
 let currentModalProject = null;
 
 // ── INIT ─────────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  loadPersistedCategories();
+  await fetchMajorProjects(); // must load before populating selects
   populateSelects();
   populateModalSelects();
   fetchAllData();
   setupTabs();
+  renderSettingsLists();
 });
 
 function populateSelects() {
@@ -1073,6 +1221,7 @@ function addCustomMajorProject() {
   populateMajorSelect('modal-major');
   document.getElementById('add-major').value = val;
   input.value = '';
+  saveMajorProjects();
   showToast('Custom major project added: ' + val, 'success');
 }
 
@@ -1084,6 +1233,7 @@ function setupTabs() {
       document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
       btn.classList.add('active');
       document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+      if (btn.dataset.tab === 'settings') renderSettingsLists();
     });
   });
 }
@@ -1114,6 +1264,7 @@ const TAB_GIDS = {
   'Active Projects': '2066572307',
   'Completed Projects': '1795091806',
   'Notes': '2136714643',
+  'Major Projects': '1890335885',
 };
 
 let notesMap = {}; // projectName → most recent note text
@@ -1727,6 +1878,143 @@ function showToast(msg, type='') {
 // Close modal on overlay click
 document.getElementById('complete-modal').addEventListener('click', function(e) {
   if (e.target === this) closeModal();
+});
+
+// ── SETTINGS ─────────────────────────────────────────────────────
+const LS_CATS = 'risd_custom_categories';
+
+function loadPersistedCategories() {
+  const savedCats = localStorage.getItem(LS_CATS);
+  if (savedCats) categories = JSON.parse(savedCats);
+}
+
+function saveCategories() {
+  localStorage.setItem(LS_CATS, JSON.stringify(categories));
+}
+
+async function fetchMajorProjects() {
+  try {
+    const rows = await fetchSheetTab('Major Projects');
+    const vals = rows.map(r => (r[0] || '').trim()).filter(v => v !== '');
+    if (vals.length > 0) majorProjects = vals;
+  } catch(e) {
+    console.error('Could not load major projects from sheet, using defaults:', e);
+  }
+}
+
+async function saveMajorProjects() {
+  const url = `${APPS_SCRIPT_URL}?action=saveMajors&majors=${encodeURIComponent(JSON.stringify(majorProjects))}`;
+  try {
+    await fetch(url, { mode: 'no-cors' });
+  } catch(e) {
+    showToast('Could not save major projects — try again', 'error');
+  }
+}
+
+function renderSettingsLists() {
+  renderSettingsList('settings-cat-list',   categories,    'cat');
+  renderSettingsList('settings-major-list', majorProjects, 'major');
+}
+
+function renderSettingsList(containerId, list, type) {
+  const el = document.getElementById(containerId);
+  el.innerHTML = '';
+  list.forEach((item, idx) => {
+    const row = document.createElement('div');
+    row.className = 'settings-item';
+    row.dataset.idx = idx;
+    row.innerHTML = `
+      <span class="settings-item-name">${escHtml(item)}</span>
+      <button class="settings-item-btn edit" title="Rename" onclick="startEdit(this,'${type}',${idx})">✎</button>
+      <button class="settings-item-btn delete" title="Delete" onclick="deleteItem('${type}',${idx})">✕</button>`;
+    el.appendChild(row);
+  });
+}
+
+function startEdit(btn, type, idx) {
+  const row  = btn.closest('.settings-item');
+  const list = type === 'cat' ? categories : majorProjects;
+  const current = list[idx];
+  row.innerHTML = `
+    <input class="edit-input" type="text" value="${escHtml(current)}">
+    <button class="settings-item-btn save"   onclick="saveEdit(this,'${type}',${idx})">✓</button>
+    <button class="settings-item-btn cancel" onclick="renderSettingsLists()">✕</button>`;
+  const input = row.querySelector('input');
+  input.focus();
+  input.select();
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter')  saveEdit(row.querySelector('.save'),   type, idx);
+    if (e.key === 'Escape') renderSettingsLists();
+  });
+}
+
+function saveEdit(btn, type, idx) {
+  const input = btn.closest('.settings-item').querySelector('input');
+  const newVal = input.value.trim();
+  if (!newVal) return;
+  if (type === 'cat') {
+    categories[idx] = newVal;
+    saveCategories();
+    populateCategorySelect('add-category');
+    populateCategorySelect('modal-category');
+  } else {
+    majorProjects[idx] = newVal;
+    saveMajorProjects();
+    populateMajorSelect('add-major');
+    populateMajorSelect('modal-major');
+  }
+  renderSettingsLists();
+  showToast('Renamed successfully', 'success');
+}
+
+function deleteItem(type, idx) {
+  const list = type === 'cat' ? categories : majorProjects;
+  const name = list[idx];
+  if (!confirm(`Remove "${name}"?\n\nExisting projects using this value won't be affected.`)) return;
+  list.splice(idx, 1);
+  if (type === 'cat') {
+    saveCategories();
+    populateCategorySelect('add-category');
+    populateCategorySelect('modal-category');
+  } else {
+    saveMajorProjects();
+    populateMajorSelect('add-major');
+    populateMajorSelect('modal-major');
+  }
+  renderSettingsLists();
+  showToast(`"${name}" removed`, 'success');
+}
+
+function settingsAddCategory() {
+  const input = document.getElementById('new-cat-input');
+  const val = input.value.trim();
+  if (!val || categories.includes(val)) { if (!val) return; showToast('Already exists', 'error'); return; }
+  categories.push(val);
+  saveCategories();
+  populateCategorySelect('add-category');
+  populateCategorySelect('modal-category');
+  input.value = '';
+  renderSettingsLists();
+  showToast('Category added', 'success');
+}
+
+function settingsAddMajor() {
+  const input = document.getElementById('new-major-input');
+  const val = input.value.trim();
+  if (!val || majorProjects.includes(val)) { if (!val) return; showToast('Already exists', 'error'); return; }
+  majorProjects.push(val);
+  saveMajorProjects();
+  populateMajorSelect('add-major');
+  populateMajorSelect('modal-major');
+  input.value = '';
+  renderSettingsLists();
+  showToast('Major project added', 'success');
+}
+
+// Allow Enter key in Settings add inputs
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('new-cat-input').addEventListener('keydown',   e => { if (e.key === 'Enter') settingsAddCategory(); });
+  document.getElementById('new-major-input').addEventListener('keydown', e => { if (e.key === 'Enter') settingsAddMajor(); });
 });
 </script>
 </body>
