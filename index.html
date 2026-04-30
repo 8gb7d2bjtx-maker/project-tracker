@@ -442,6 +442,19 @@
     background: var(--green);
     color: #000;
   }
+  .delete-btn {
+    background: none;
+    border: none;
+    color: var(--text3);
+    font-size: 14px;
+    line-height: 1;
+    padding: 4px 5px;
+    cursor: pointer;
+    border-radius: var(--radius);
+    transition: all var(--transition);
+    flex-shrink: 0;
+  }
+  .delete-btn:hover { color: var(--red); background: var(--red-bg); }
 
   /* Notes */
   .card-notes-toggle {
@@ -782,15 +795,15 @@
   </header>
 
   <nav>
-    <button class="tab-btn active" data-tab="add">+ Add Project</button>
-    <button class="tab-btn" data-tab="active">Active Projects <span class="tab-count" id="count-active">—</span></button>
+    <button class="tab-btn active" data-tab="active">Active Projects <span class="tab-count" id="count-active">—</span></button>
+    <button class="tab-btn" data-tab="add">+ Add Project</button>
     <button class="tab-btn" data-tab="completed">Completed <span class="tab-count" id="count-completed">—</span></button>
     <button class="tab-btn" data-tab="summary">Summary</button>
   </nav>
 
   <main>
     <!-- ADD PROJECT -->
-    <div class="tab-panel active" id="tab-add">
+    <div class="tab-panel" id="tab-add">
       <div style="padding: 32px 24px;">
         <div class="form-card">
           <h2>
@@ -843,7 +856,7 @@
     </div>
 
     <!-- ACTIVE PROJECTS -->
-    <div class="tab-panel" id="tab-active">
+    <div class="tab-panel active" id="tab-active">
       <div class="kanban-header">
         <h2>Active Projects</h2>
         <span class="kanban-meta" id="active-meta">Loading…</span>
@@ -922,6 +935,7 @@
 <script>
 // ── CONFIG ──────────────────────────────────────────────────────
 const SHEET_ID = '1X0h3QfumXPgfnSB6FzoT7ZsAgjulSWAe1efDRdYkCN0';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby_TS3HiRH9tipl9TkkBoTjtUru9vg_WlKl5zPK3S55esM37h-tpXhw21f5o84oGtbgrA/exec';
 const FORM1_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSevCkOpfjUPWGcPQWnt6_s5DzpxzprLYkATiRkpRkscQdKoDg/formResponse';
 const FORM2_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSfHifjPEa-deGDssRYE8ATSs7ESyAwmMHz0Hwc3x4iq8HGI8g/formResponse';
 const FORM3_URL = 'https://docs.google.com/forms/d/e/1FAIpQLScvZfqA1Keik3QtAZDM_uIlARxwFCUUsmLLjNMRwPE9-xCq-A/formResponse';
@@ -1260,6 +1274,7 @@ function createCard(project) {
         ${STATUSES.map(s => `<option value="${s}" ${s === project.status ? 'selected' : ''}>${s}</option>`).join('')}
       </select>
       <button class="done-btn" data-project="${escHtml(project.name)}">✓ Done</button>
+      <button class="delete-btn" title="Remove project">✕</button>
     </div>
     <button class="card-notes-toggle ${hasNote ? 'has-notes' : ''}">
       <span class="toggle-arrow">▶</span>
@@ -1280,6 +1295,21 @@ function createCard(project) {
   });
 
   card.querySelector('.done-btn').addEventListener('click', () => openCompleteModal(project));
+
+  // Delete (remove without completing)
+  card.querySelector('.delete-btn').addEventListener('click', async () => {
+    if (!confirm(`Remove "${project.name}" from Active Projects?\n\nThis cannot be undone.`)) return;
+    const url = `${APPS_SCRIPT_URL}?action=deleteActive&name=${encodeURIComponent(project.name)}`;
+    try {
+      await fetch(url, { mode: 'no-cors' });
+      activeProjects = activeProjects.filter(p => p.name !== project.name);
+      document.getElementById('count-active').textContent = activeProjects.length;
+      renderKanban();
+      showToast(`"${project.name}" removed`, 'success');
+    } catch(e) {
+      showToast('Could not remove project — try again', 'error');
+    }
+  });
 
   // Notes toggle
   const toggle   = card.querySelector('.card-notes-toggle');
