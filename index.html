@@ -1288,10 +1288,18 @@ function createCard(project) {
       </div>
     </div>`;
 
-  card.querySelector('.card-status-sel').addEventListener('change', function() {
+  card.querySelector('.card-status-sel').addEventListener('change', async function() {
+    const newStatus = this.value;
     const proj = activeProjects.find(p => p.name === project.name);
-    if (proj) proj.status = this.value;
+    if (proj) proj.status = newStatus;
     renderKanban();
+    // Persist to sheet
+    const url = `${APPS_SCRIPT_URL}?action=updateStatus&name=${encodeURIComponent(project.name)}&status=${encodeURIComponent(newStatus)}`;
+    try {
+      await fetch(url, { mode: 'no-cors' });
+    } catch(e) {
+      showToast('Could not save status change — try again', 'error');
+    }
   });
 
   card.querySelector('.done-btn').addEventListener('click', () => openCompleteModal(project));
