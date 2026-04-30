@@ -393,21 +393,109 @@
     background: var(--surface2);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    padding: 12px;
+    padding: 10px 12px;
     transition: border-color var(--transition), box-shadow var(--transition);
-    cursor: default;
+    cursor: grab;
+    user-select: none;
   }
   .project-card:hover {
     border-color: var(--border2);
     box-shadow: 0 2px 12px rgba(0,0,0,0.2);
   }
+  .project-card.dragging {
+    opacity: 0.4;
+    cursor: grabbing;
+  }
+  .project-card.drag-over {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent-glow);
+  }
+  .kanban-col.drop-target {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--surface) 90%, var(--accent) 10%);
+  }
+
+  /* Row 1: name + action buttons */
+  .card-top {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+  }
   .card-name {
     font-size: 13px;
     font-weight: 500;
     color: var(--text);
-    margin-bottom: 8px;
     line-height: 1.4;
+    flex: 1;
+    min-width: 0;
   }
+  .card-actions {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .done-btn {
+    background: none;
+    border: none;
+    color: var(--text3);
+    font-size: 13px;
+    padding: 3px 5px;
+    cursor: pointer;
+    border-radius: var(--radius);
+    transition: all var(--transition);
+    flex-shrink: 0;
+    line-height: 1;
+  }
+  .done-btn:hover { color: var(--green); background: var(--green-bg); }
+  .delete-btn {
+    background: none;
+    border: none;
+    color: var(--text3);
+    font-size: 12px;
+    line-height: 1;
+    padding: 3px 5px;
+    cursor: pointer;
+    border-radius: var(--radius);
+    transition: all var(--transition);
+    flex-shrink: 0;
+  }
+  .delete-btn:hover { color: var(--red); background: var(--red-bg); }
+
+  /* Row 2: expandable drawer */
+  .card-drawer-toggle {
+    width: 100%;
+    background: none;
+    border: none;
+    color: var(--text3);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px;
+    padding: 5px 0 0;
+    margin-top: 5px;
+    cursor: pointer;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: color var(--transition);
+    border-top: 1px solid var(--border);
+  }
+  .card-drawer-toggle:hover { color: var(--text2); }
+  .card-drawer-toggle.has-notes { color: var(--accent); }
+  .card-drawer-toggle .toggle-arrow {
+    display: inline-block;
+    font-size: 8px;
+    transition: transform 0.2s ease;
+  }
+  .card-drawer-toggle.open .toggle-arrow { transform: rotate(90deg); }
+
+  .card-drawer-body {
+    display: none;
+    padding-top: 10px;
+  }
+  .card-drawer-body.open { display: block; }
+
   .card-pills {
     display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 10px;
   }
@@ -421,80 +509,6 @@
   .pill-cat { background: var(--blue-bg); color: var(--blue); }
   .pill-maj { background: var(--purple-bg); color: var(--purple); }
 
-  .card-status-row {
-    display: flex; gap: 6px; align-items: center;
-  }
-  .card-status-row select {
-    flex: 1;
-    font-size: 11px;
-    padding: 5px 8px;
-    background: var(--surface3);
-    border-color: var(--border);
-  }
-  .done-btn {
-    background: var(--green-bg);
-    border: 1px solid transparent;
-    color: var(--green);
-    border-radius: var(--radius);
-    padding: 5px 9px;
-    font-size: 11px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all var(--transition);
-    white-space: nowrap;
-    flex-shrink: 0;
-  }
-  .done-btn:hover {
-    background: var(--green);
-    color: #000;
-  }
-  .delete-btn {
-    background: none;
-    border: none;
-    color: var(--text3);
-    font-size: 14px;
-    line-height: 1;
-    padding: 4px 5px;
-    cursor: pointer;
-    border-radius: var(--radius);
-    transition: all var(--transition);
-    flex-shrink: 0;
-  }
-  .delete-btn:hover { color: var(--red); background: var(--red-bg); }
-
-  /* Notes */
-  .card-notes-toggle {
-    width: 100%;
-    background: none;
-    border: none;
-    border-top: 1px solid var(--border);
-    color: var(--text3);
-    font-family: 'DM Sans', sans-serif;
-    font-size: 11px;
-    padding: 7px 0 0;
-    margin-top: 10px;
-    cursor: pointer;
-    text-align: left;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    transition: color var(--transition);
-  }
-  .card-notes-toggle:hover { color: var(--text2); }
-  .card-notes-toggle .toggle-arrow {
-    display: inline-block;
-    transition: transform 0.2s ease;
-    font-size: 9px;
-  }
-  .card-notes-toggle.open .toggle-arrow { transform: rotate(90deg); }
-  .card-notes-toggle.has-notes { color: var(--accent); }
-  .card-notes-toggle.has-notes:hover { color: var(--text); }
-
-  .card-notes-body {
-    display: none;
-    margin-top: 8px;
-  }
-  .card-notes-body.open { display: block; }
   .card-notes-body textarea {
     width: 100%;
     background: var(--surface3);
@@ -1280,6 +1294,31 @@ function renderKanban() {
         </div>`;
       rowEl.appendChild(colEl);
 
+      // ── Drop target handlers ──
+      colEl.addEventListener('dragover', e => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        colEl.classList.add('drop-target');
+      });
+      colEl.addEventListener('dragleave', e => {
+        if (!colEl.contains(e.relatedTarget)) colEl.classList.remove('drop-target');
+      });
+      colEl.addEventListener('drop', async e => {
+        e.preventDefault();
+        colEl.classList.remove('drop-target');
+        const projectName = e.dataTransfer.getData('text/plain');
+        const proj = activeProjects.find(p => p.name === projectName);
+        if (!proj || proj.status === col.status) return;
+        proj.status = col.status;
+        renderKanban();
+        const url = `${APPS_SCRIPT_URL}?action=updateStatus&name=${encodeURIComponent(projectName)}&status=${encodeURIComponent(col.status)}`;
+        try {
+          await fetch(url, { mode: 'no-cors' });
+        } catch(err) {
+          showToast('Could not save status change — try again', 'error');
+        }
+      });
+
       const cardsEl = colEl.querySelector('.kanban-cards');
       projects.forEach(p => {
         const card = createCard(p);
@@ -1294,102 +1333,113 @@ function renderKanban() {
 function createCard(project) {
   const card = document.createElement('div');
   card.className = 'project-card';
+  card.draggable = true;
 
   const showMajor = project.major && project.major.toLowerCase() !== 'standalone';
   const savedNote = notesMap[project.name] || '';
   const hasNote = savedNote.trim().length > 0;
+  const hasPills = project.category || showMajor;
+  const drawerLabel = hasNote ? '▶ Notes' : (hasPills ? '▶ Details' : '▶ Add note');
+
+  // Make links in notes clickable
+  function linkify(text) {
+    return escHtml(text).replace(
+      /(https?:\/\/[^\s<]+)/g,
+      '<a href="$1" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:underline;word-break:break-all;" onclick="event.stopPropagation()">$1</a>'
+    );
+  }
 
   card.innerHTML = `
-    <div class="card-name">${escHtml(project.name)}</div>
-    <div class="card-pills">
-      ${project.category ? `<span class="pill pill-cat">${escHtml(project.category)}</span>` : ''}
-      ${showMajor ? `<span class="pill pill-maj">${escHtml(project.major)}</span>` : ''}
+    <div class="card-top">
+      <div class="card-name">${escHtml(project.name)}</div>
+      <div class="card-actions">
+        <button class="done-btn" title="Mark complete">✓</button>
+        <button class="delete-btn" title="Remove project">✕</button>
+      </div>
     </div>
-    <div class="card-status-row">
-      <select class="card-status-sel" data-project="${escHtml(project.name)}">
-        ${STATUSES.map(s => `<option value="${s}" ${s === project.status ? 'selected' : ''}>${s}</option>`).join('')}
-      </select>
-      <button class="done-btn" data-project="${escHtml(project.name)}">✓ Done</button>
-      <button class="delete-btn" title="Remove project">✕</button>
-    </div>
-    <button class="card-notes-toggle ${hasNote ? 'has-notes' : ''}">
+    <button class="card-drawer-toggle ${hasNote ? 'has-notes' : ''}">
       <span class="toggle-arrow">▶</span>
-      ${hasNote ? 'Notes' : 'Add note'}
+      <span class="drawer-label">${hasNote ? ' Notes' : (hasPills ? ' Details' : ' Add note')}</span>
     </button>
-    <div class="card-notes-body">
-      <textarea placeholder="Add notes, links, context…" rows="3">${escHtml(savedNote)}</textarea>
-      <div class="notes-save-row">
-        <button class="notes-save-btn">Save note</button>
-        <span class="notes-status"></span>
+    <div class="card-drawer-body">
+      ${hasPills ? `<div class="card-pills">
+        ${project.category ? `<span class="pill pill-cat">${escHtml(project.category)}</span>` : ''}
+        ${showMajor ? `<span class="pill pill-maj">${escHtml(project.major)}</span>` : ''}
+      </div>` : ''}
+      <div class="card-notes-body">
+        <textarea placeholder="Add notes, links, context…" rows="3">${escHtml(savedNote)}</textarea>
+        <div class="notes-save-row">
+          <button class="notes-save-btn">Save note</button>
+          <span class="notes-status"></span>
+        </div>
       </div>
     </div>`;
 
-  card.querySelector('.card-status-sel').addEventListener('change', async function() {
-    const newStatus = this.value;
-    const proj = activeProjects.find(p => p.name === project.name);
-    if (proj) proj.status = newStatus;
-    renderKanban();
-    // Persist to sheet
-    const url = `${APPS_SCRIPT_URL}?action=updateStatus&name=${encodeURIComponent(project.name)}&status=${encodeURIComponent(newStatus)}`;
-    try {
-      await fetch(url, { mode: 'no-cors' });
-    } catch(e) {
-      showToast('Could not save status change — try again', 'error');
-    }
+  // ── Drag and drop ──
+  card.addEventListener('dragstart', e => {
+    e.dataTransfer.setData('text/plain', project.name);
+    e.dataTransfer.effectAllowed = 'move';
+    setTimeout(() => card.classList.add('dragging'), 0);
+  });
+  card.addEventListener('dragend', () => card.classList.remove('dragging'));
+
+  // ── Done button ──
+  card.querySelector('.done-btn').addEventListener('click', e => {
+    e.stopPropagation();
+    openCompleteModal(project);
   });
 
-  card.querySelector('.done-btn').addEventListener('click', () => openCompleteModal(project));
-
-  // Delete (remove without completing)
-  card.querySelector('.delete-btn').addEventListener('click', async () => {
+  // ── Delete button ──
+  card.querySelector('.delete-btn').addEventListener('click', async e => {
+    e.stopPropagation();
     if (!confirm(`Remove "${project.name}" from Active Projects?\n\nThis cannot be undone.`)) return;
     const url = `${APPS_SCRIPT_URL}?action=deleteActive&name=${encodeURIComponent(project.name)}`;
     try {
       await fetch(url, { mode: 'no-cors' });
       activeProjects = activeProjects.filter(p => p.name !== project.name);
-      document.getElementById('count-active').textContent = activeProjects.length;
+      updateCountsAndMeta();
       renderKanban();
       showToast(`"${project.name}" removed`, 'success');
-    } catch(e) {
+    } catch(err) {
       showToast('Could not remove project — try again', 'error');
     }
   });
 
-  // Notes toggle
-  const toggle   = card.querySelector('.card-notes-toggle');
-  const body     = card.querySelector('.card-notes-body');
-  const textarea = card.querySelector('textarea');
-  const saveBtn  = card.querySelector('.notes-save-btn');
-  const statusEl = card.querySelector('.notes-status');
+  // ── Drawer toggle ──
+  const toggle    = card.querySelector('.card-drawer-toggle');
+  const drawerBody = card.querySelector('.card-drawer-body');
+  const textarea  = card.querySelector('textarea');
+  const saveBtn   = card.querySelector('.notes-save-btn');
+  const statusEl  = card.querySelector('.notes-status');
+  const labelEl   = card.querySelector('.drawer-label');
 
   toggle.addEventListener('click', () => {
-    const isOpen = body.classList.toggle('open');
+    const isOpen = drawerBody.classList.toggle('open');
     toggle.classList.toggle('open', isOpen);
-    if (isOpen) textarea.focus();
+    if (isOpen && !hasNote) textarea.focus();
   });
 
+  // ── Save note ──
   saveBtn.addEventListener('click', async () => {
     const val = textarea.value.trim();
     saveBtn.disabled = true;
     statusEl.textContent = 'Saving…';
     statusEl.style.color = 'var(--text3)';
 
-    const body2 = new URLSearchParams();
-    body2.append(F3.name, project.name);
-    body2.append(F3.note, val);
+    const formBody = new URLSearchParams();
+    formBody.append(F3.name, project.name);
+    formBody.append(F3.note, val);
 
     try {
-      await fetch(FORM3_URL, { method: 'POST', mode: 'no-cors', body: body2 });
-      // Update local notesMap so it reflects immediately without a full refresh
+      await fetch(FORM3_URL, { method: 'POST', mode: 'no-cors', body: formBody });
       notesMap[project.name] = val;
       const hasNoteNow = val.length > 0;
       toggle.classList.toggle('has-notes', hasNoteNow);
-      // Update toggle label text (keep the arrow span, just update the text node)
-      toggle.childNodes[1].textContent = hasNoteNow ? ' Notes' : ' Add note';
+      labelEl.textContent = hasNoteNow ? ' Notes' : (hasPills ? ' Details' : ' Add note');
       statusEl.textContent = 'Saved ✓';
       statusEl.style.color = 'var(--green)';
       setTimeout(() => { statusEl.textContent = ''; }, 2500);
-    } catch (e) {
+    } catch (err) {
       statusEl.textContent = 'Error — try again';
       statusEl.style.color = 'var(--red)';
     } finally {
