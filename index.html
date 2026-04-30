@@ -322,21 +322,27 @@
 
   .kanban-board {
     display: flex;
+    flex-direction: column;
     gap: 12px;
     padding: 0 24px 24px;
-    overflow-x: auto;
+    overflow-y: auto;
     flex: 1;
-    align-items: flex-start;
     padding-top: 4px;
   }
+  .kanban-row {
+    display: grid;
+    gap: 12px;
+  }
+  .kanban-row.row-top    { grid-template-columns: repeat(3, 1fr); }
+  .kanban-row.row-bottom { grid-template-columns: repeat(2, 1fr); }
+
   .kanban-col {
-    flex: 0 0 240px;
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
     display: flex;
     flex-direction: column;
-    max-height: 100%;
+    min-height: 160px;
     overflow: hidden;
   }
   .kanban-col-header {
@@ -1221,37 +1227,48 @@ async function fetchNotes() {
 }
 
 // ── KANBAN ───────────────────────────────────────────────────────
-const COL_CONFIG = [
-  { status: 'High Priority', cls: 'col-high' },
-  { status: '1st Draft / Editing', cls: 'col-draft' },
-  { status: 'Mid Priority', cls: 'col-mid' },
-  { status: 'Low Priority', cls: 'col-low' },
-  { status: 'Waiting on Information', cls: 'col-wait' },
-];
+const COL_CONFIG = {
+  top:    [
+    { status: 'High Priority',         cls: 'col-high' },
+    { status: 'Mid Priority',          cls: 'col-mid'  },
+    { status: 'Low Priority',          cls: 'col-low'  },
+  ],
+  bottom: [
+    { status: '1st Draft / Editing',      cls: 'col-draft' },
+    { status: 'Waiting on Information',   cls: 'col-wait'  },
+  ],
+};
 
 function renderKanban() {
   const board = document.getElementById('kanban-board');
   board.innerHTML = '';
 
-  COL_CONFIG.forEach(col => {
-    const projects = activeProjects.filter(p => p.status === col.status);
-    const colEl = document.createElement('div');
-    colEl.className = `kanban-col ${col.cls}`;
-    colEl.innerHTML = `
-      <div class="kanban-col-header">
-        <div class="col-title"><div class="col-dot"></div>${col.status}</div>
-        <div class="col-count">${projects.length}</div>
-      </div>
-      <div class="kanban-cards" id="col-${col.status.replace(/\W+/g,'-')}">
-        ${projects.length === 0 ? '<div class="kanban-empty">Empty</div>' : ''}
-      </div>`;
-    board.appendChild(colEl);
+  ['top', 'bottom'].forEach(rowKey => {
+    const rowEl = document.createElement('div');
+    rowEl.className = `kanban-row row-${rowKey}`;
 
-    const cardsEl = colEl.querySelector('.kanban-cards');
-    projects.forEach(p => {
-      const card = createCard(p);
-      cardsEl.appendChild(card);
+    COL_CONFIG[rowKey].forEach(col => {
+      const projects = activeProjects.filter(p => p.status === col.status);
+      const colEl = document.createElement('div');
+      colEl.className = `kanban-col ${col.cls}`;
+      colEl.innerHTML = `
+        <div class="kanban-col-header">
+          <div class="col-title"><div class="col-dot"></div>${col.status}</div>
+          <div class="col-count">${projects.length}</div>
+        </div>
+        <div class="kanban-cards" id="col-${col.status.replace(/\W+/g,'-')}">
+          ${projects.length === 0 ? '<div class="kanban-empty">Empty</div>' : ''}
+        </div>`;
+      rowEl.appendChild(colEl);
+
+      const cardsEl = colEl.querySelector('.kanban-cards');
+      projects.forEach(p => {
+        const card = createCard(p);
+        cardsEl.appendChild(card);
+      });
     });
+
+    board.appendChild(rowEl);
   });
 }
 
