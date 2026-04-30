@@ -865,6 +865,10 @@
             <select id="add-major">
               <option value="">Select major project…</option>
             </select>
+            <div class="custom-cat-row">
+              <input type="text" id="custom-major-input" placeholder="Add custom major project…">
+              <button onclick="addCustomMajorProject()">Add</button>
+            </div>
           </div>
 
           <div class="form-group">
@@ -969,7 +973,7 @@ const F2 = { name:'entry.1936166445', category:'entry.748617586', month:'entry.1
 const F3 = { name:'entry.1598157101', note:'entry.1545699935' };
 
 const STATUSES = ['High Priority','1st Draft / Editing','Mid Priority','Low Priority','Waiting on Information'];
-const MAJOR_PROJECTS = ['Standalone','Bond','Enrollment','Magnet','Center Stage','Dream Big','WWYLS','Legends & Legacies','Teacher of the Year','Dual Language Schools','CTE','Fine Arts','We Read Together','AVID','Financial Aid','TI12','Web Graphics'];
+let majorProjects = ['Standalone','Bond','Enrollment','Magnet','Center Stage','Dream Big','WWYLS','Legends & Legacies','Teacher of the Year','Dual Language Schools','CTE','Fine Arts','We Read Together','AVID','Financial Aid','TI12','Web Graphics'];
 const BASE_CATEGORIES = ['Advertising','Apparel & Merchandise','Certificates & Awards','Digital & Web Assets','Environmental Graphics','Event Graphics','Infographics & Data Visualization','Logo / Brand Identity','Multipage Booklet','Photo & Video','Print Collateral & Flyers','Signage & Banners','Slide Decks & Presentations','Social Media & Web Graphics','Update / Revision','Other'];
 const MONTHS = [];
 const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
@@ -1031,10 +1035,11 @@ function populateCategorySelect(id) {
 
 function populateMajorSelect(id) {
   const el = document.getElementById(id);
+  const current = el.value;
   el.innerHTML = '<option value="">Select major project…</option>';
-  MAJOR_PROJECTS.forEach(m => {
+  majorProjects.forEach(m => {
     const opt = new Option(m, m);
-    if (m === 'Standalone') opt.selected = true;
+    if (current ? m === current : m === 'Standalone') opt.selected = true;
     el.add(opt);
   });
 }
@@ -1057,6 +1062,18 @@ function addCustomCategory() {
   document.getElementById('add-category').value = val;
   input.value = '';
   showToast('Custom category added: ' + val, 'success');
+}
+
+function addCustomMajorProject() {
+  const input = document.getElementById('custom-major-input');
+  const val = input.value.trim();
+  if (!val || majorProjects.includes(val)) return;
+  majorProjects.push(val);
+  populateMajorSelect('add-major');
+  populateMajorSelect('modal-major');
+  document.getElementById('add-major').value = val;
+  input.value = '';
+  showToast('Custom major project added: ' + val, 'success');
 }
 
 // ── TABS ─────────────────────────────────────────────────────────
