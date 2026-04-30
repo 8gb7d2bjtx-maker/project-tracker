@@ -1055,7 +1055,15 @@ function setupTabs() {
 
 // ── DATA FETCH ───────────────────────────────────────────────────
 async function fetchAllData() {
-  await Promise.all([fetchActiveProjects(), fetchCompletedProjects(), fetchNotes()]);
+  // Fetch active projects and notes together, but render kanban only after BOTH are done
+  // so notes are always available when cards are built.
+  await Promise.all([
+    fetchActiveProjectsData(),
+    fetchNotes(),
+    fetchCompletedProjects(),
+  ]);
+  updateCountsAndMeta();
+  renderKanban();
   updateLastSync();
 }
 
@@ -1156,15 +1164,12 @@ async function discoverGid(tabName) {
   return null;
 }
 
-async function fetchActiveProjects() {
+async function fetchActiveProjectsData() {
   try {
     const rows = await fetchSheetTab('Active Projects');
-    // Google Forms prepends a Timestamp column (col 0), so data starts at col 1:
-    // col0=Timestamp, col1=Project Name, col2=Status, col3=Category, col4=Major Project
     const dataRows = rows.filter((r, i) => {
-      // Skip header row (gviz sometimes includes it); detect by "timestamp" or "project name" in first cell
       if (i === 0 && r[0] && (r[0].toLowerCase() === 'timestamp' || r[0].toLowerCase() === 'project name')) return false;
-      return r[1] && r[1].trim() !== ''; // col1 = Project Name must be non-empty
+      return r[1] && r[1].trim() !== '';
     });
     activeProjects = dataRows.map(r => ({
       name: r[1] || '',
@@ -1172,13 +1177,22 @@ async function fetchActiveProjects() {
       category: r[3] || '',
       major: r[4] || '',
     }));
-    document.getElementById('count-active').textContent = activeProjects.length;
-    document.getElementById('active-meta').textContent = `${activeProjects.length} project${activeProjects.length !== 1 ? 's' : ''} across ${STATUSES.length} columns`;
-    renderKanban();
   } catch (e) {
     console.error('Error fetching active projects:', e);
     document.getElementById('kanban-board').innerHTML = `<div class="loading" style="color:var(--red)">⚠ Could not load projects: ${e.message}<br><span style="font-size:11px;margin-top:8px;display:block">Make sure your sheet is shared as "Anyone with the link can view"</span></div>`;
   }
+}
+
+function updateCountsAndMeta() {
+  document.getElementById('count-active').textContent = activeProjects.length;
+  document.getElementById('active-meta').textContent = `${activeProjects.length} project${activeProjects.length !== 1 ? 's' : ''} across ${Object.values(COL_CONFIG).flat().length} columns`;
+}
+
+// Keep fetchActiveProjects as a convenience for places that only need to reload active data
+async function fetchActiveProjects() {
+  await Promise.all([fetchActiveProjectsData(), fetchNotes()]);
+  updateCountsAndMeta();
+  renderKanban();
 }
 
 async function fetchCompletedProjects() {
@@ -1227,7 +1241,7 @@ async function fetchNotes() {
     notesMap = map;
   } catch (e) {
     console.error('Error fetching notes:', e);
-    notesMap = {};
+    // Don't wipe notesMap on error — keep whatever we had before
   }
 }
 
