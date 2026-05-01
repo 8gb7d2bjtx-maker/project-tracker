@@ -457,6 +457,12 @@
   .card-action-btn.notes-btn.has-notes { color: var(--accent); }
   .card-action-btn.done-btn:hover  { color: var(--green); background: var(--green-bg); }
   .card-action-btn.delete-btn:hover { color: var(--red); background: var(--red-bg); }
+  .card-deadline {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: var(--text3);
+    margin-right: 2px;
+  }
 
   .card-pills {
     display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 12px;
@@ -1001,6 +1007,11 @@
             <textarea id="add-notes" placeholder="Add any notes, links, or context…" rows="3" style="resize:vertical;"></textarea>
           </div>
 
+          <div class="form-group">
+            <label for="add-deadline">Deadline <span style="color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
+            <input type="date" id="add-deadline">
+          </div>
+
           <button class="btn-primary" id="add-submit-btn" onclick="submitAddProject()">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
             Add Project to Sheet
@@ -1094,6 +1105,10 @@
       <button class="notes-modal-close" onclick="closeNotesModal()">✕</button>
     </div>
     <div class="notes-modal-pills" id="notes-modal-pills"></div>
+    <div class="form-group" style="margin-bottom:12px;">
+      <label for="notes-modal-deadline" style="font-size:11px;">Deadline <span style="color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
+      <input type="date" id="notes-modal-deadline" style="width:100%;">
+    </div>
     <div id="notes-modal-preview" style="display:none;font-size:13px;line-height:1.6;color:var(--text);background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;margin-bottom:10px;white-space:pre-wrap;word-break:break-word;"></div>
     <textarea id="notes-modal-textarea" placeholder="Add notes, links, context…" rows="4"></textarea>
     <div class="notes-save-row">
@@ -1143,9 +1158,11 @@ const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbySVX-hbaQcoDJA
 const FORM1_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSevCkOpfjUPWGcPQWnt6_s5DzpxzprLYkATiRkpRkscQdKoDg/formResponse';
 const FORM2_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSfHifjPEa-deGDssRYE8ATSs7ESyAwmMHz0Hwc3x4iq8HGI8g/formResponse';
 const FORM3_URL = 'https://docs.google.com/forms/d/e/1FAIpQLScvZfqA1Keik3QtAZDM_uIlARxwFCUUsmLLjNMRwPE9-xCq-A/formResponse';
+const FORM4_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSfL-kgjkKWkhnpwG9Xp2dACfY4sKl6Qoj8JQTV4FsTc3CuO3w/formResponse';
 const F1 = { name:'entry.1936166445', status:'entry.958776253', category:'entry.748617586', major:'entry.193485853' };
 const F2 = { name:'entry.1936166445', category:'entry.748617586', month:'entry.193485853', major:'entry.1295486583' };
 const F3 = { name:'entry.1598157101', note:'entry.1545699935' };
+const F4 = { name:'entry.536580912', deadline:'entry.1472388367' };
 
 const STATUSES = ['High Priority','1st Draft / Editing','Mid Priority','Low Priority','Waiting on Information'];
 let majorProjects = ['Standalone','Bond','Enrollment','Magnet','Center Stage','Dream Big','WWYLS','Legends & Legacies','Teacher of the Year','Dual Language Schools','CTE','Fine Arts','We Read Together','AVID','Financial Aid','TI12','Web Graphics'];
@@ -1270,11 +1287,10 @@ function setupTabs() {
 
 // ── DATA FETCH ───────────────────────────────────────────────────
 async function fetchAllData() {
-  // Fetch active projects and notes together, but render kanban only after BOTH are done
-  // so notes are always available when cards are built.
   await Promise.all([
     fetchActiveProjectsData(),
     fetchNotes(),
+    fetchDeadlines(),
     fetchCompletedProjects(),
   ]);
   updateCountsAndMeta();
@@ -1295,9 +1311,11 @@ const TAB_GIDS = {
   'Completed Projects': '1795091806',
   'Notes': '2136714643',
   'Major Projects': '1890335885',
+  'Deadline': '1776726907',
 };
 
-let notesMap = {}; // projectName → most recent note text
+let notesMap = {};     // projectName → most recent note text
+let deadlinesMap = {}; // projectName → most recent deadline string
 
 function parseCSV(text) {
   // Robust CSV parser that handles quoted fields with commas/newlines
@@ -1406,7 +1424,7 @@ function updateCountsAndMeta() {
 
 // Keep fetchActiveProjects as a convenience for places that only need to reload active data
 async function fetchActiveProjects() {
-  await Promise.all([fetchActiveProjectsData(), fetchNotes()]);
+  await Promise.all([fetchActiveProjectsData(), fetchNotes(), fetchDeadlines()]);
   updateCountsAndMeta();
   renderKanban();
 }
@@ -1459,6 +1477,32 @@ async function fetchNotes() {
     console.error('Error fetching notes:', e);
     // Don't wipe notesMap on error — keep whatever we had before
   }
+}
+
+async function fetchDeadlines() {
+  try {
+    const rows = await fetchSheetTab('Deadline');
+    // col0=Timestamp, col1=Project Name, col2=Deadline
+    const map = {};
+    rows.forEach((r, i) => {
+      if (i === 0 && r[0] && r[0].toLowerCase() === 'timestamp') return;
+      const name     = (r[1] || '').trim();
+      const deadline = (r[2] || '').trim();
+      if (name) map[name] = deadline; // later rows overwrite earlier ones
+    });
+    deadlinesMap = map;
+  } catch (e) {
+    console.error('Error fetching deadlines:', e);
+    // Don't wipe deadlinesMap on error
+  }
+}
+
+function formatDeadline(dateStr) {
+  // dateStr is yyyy-mm-dd
+  if (!dateStr) return '';
+  const parts = dateStr.split('-');
+  if (parts.length < 3) return dateStr;
+  return `${parts[1]}/${parts[2]}`;
 }
 
 // ── KANBAN ───────────────────────────────────────────────────────
@@ -1537,12 +1581,15 @@ function createCard(project) {
   card.className = 'project-card';
   card.draggable = true;
 
-  const hasNote = !!(notesMap[project.name] || '').trim();
-  const isFocused = focusedCards.has(project.name);
+  const hasNote    = !!(notesMap[project.name] || '').trim();
+  const isFocused  = focusedCards.has(project.name);
+  const deadline   = deadlinesMap[project.name] || '';
+  const deadlineDisplay = deadline ? formatDeadline(deadline) : '';
 
   card.innerHTML = `
     <div class="card-name" style="cursor:pointer">${escHtml(project.name)}</div>
     <div class="card-actions">
+      ${deadlineDisplay ? `<span class="card-deadline">${deadlineDisplay}</span>` : ''}
       <button class="card-action-btn notes-btn ${hasNote ? 'has-notes' : ''}" title="${hasNote ? 'View/edit note' : 'Add note'}">🛈</button>
       <button class="card-action-btn done-btn" title="Mark complete">✓</button>
       <button class="card-action-btn delete-btn" title="Remove project">✕</button>
@@ -1625,10 +1672,12 @@ function openNotesModal(project, btn) {
   ].join('');
 
   const savedNote = notesMap[project.name] || '';
+  const savedDeadline = deadlinesMap[project.name] || '';
   const textarea  = document.getElementById('notes-modal-textarea');
   const preview   = document.getElementById('notes-modal-preview');
 
   textarea.value = savedNote;
+  document.getElementById('notes-modal-deadline').value = savedDeadline;
   document.getElementById('notes-modal-status').textContent = '';
   document.getElementById('notes-modal-save-btn').disabled = false;
 
@@ -1670,7 +1719,8 @@ async function saveNoteFromModal() {
     return;
   }
 
-  const val = textarea.value.trim();
+  const val      = textarea.value.trim();
+  const deadline = document.getElementById('notes-modal-deadline').value;
   saveBtn.disabled = true;
   statusEl.textContent = 'Saving…';
   statusEl.style.color = 'var(--text3)';
@@ -1682,13 +1732,40 @@ async function saveNoteFromModal() {
   try {
     await fetch(FORM3_URL, { method: 'POST', mode: 'no-cors', body: formBody });
     notesMap[currentNotesProject.name] = val;
+
+    // Save deadline if it changed
+    const prevDeadline = deadlinesMap[currentNotesProject.name] || '';
+    if (deadline !== prevDeadline) {
+      const dlBody = new URLSearchParams();
+      dlBody.append(F4.name, currentNotesProject.name);
+      dlBody.append(F4.deadline, deadline);
+      await fetch(FORM4_URL, { method: 'POST', mode: 'no-cors', body: dlBody });
+      deadlinesMap[currentNotesProject.name] = deadline;
+      // Update deadline on card immediately
+      document.querySelectorAll('.card-name').forEach(el => {
+        if (el.textContent === currentNotesProject.name) {
+          const actionsEl = el.closest('.project-card').querySelector('.card-actions');
+          let dlSpan = actionsEl.querySelector('.card-deadline');
+          if (deadline) {
+            if (!dlSpan) {
+              dlSpan = document.createElement('span');
+              dlSpan.className = 'card-deadline';
+              actionsEl.insertBefore(dlSpan, actionsEl.firstChild);
+            }
+            dlSpan.textContent = formatDeadline(deadline);
+          } else if (dlSpan) {
+            dlSpan.remove();
+          }
+        }
+      });
+    }
+
     if (currentNotesBtn) {
       currentNotesBtn.classList.toggle('has-notes', val.length > 0);
       currentNotesBtn.title = val.length > 0 ? 'View/edit note' : 'Add note';
     }
     statusEl.textContent = 'Saved ✓';
     statusEl.style.color = 'var(--green)';
-    // Switch to preview after saving
     if (val) {
       preview.innerHTML = linkify(val);
       preview.style.display = 'block';
@@ -1762,11 +1839,12 @@ async function submitComplete() {
 
 // ── ADD PROJECT ──────────────────────────────────────────────────
 async function submitAddProject() {
-  const name   = document.getElementById('add-name').value.trim();
-  const status = document.getElementById('add-status').value;
-  const cat    = document.getElementById('add-category').value;
-  const major  = document.getElementById('add-major').value;
-  const note   = document.getElementById('add-notes').value.trim();
+  const name     = document.getElementById('add-name').value.trim();
+  const status   = document.getElementById('add-status').value;
+  const cat      = document.getElementById('add-category').value;
+  const major    = document.getElementById('add-major').value;
+  const note     = document.getElementById('add-notes').value.trim();
+  const deadline = document.getElementById('add-deadline').value; // yyyy-mm-dd or ''
 
   if (!name || !status || !cat || !major) {
     showToast('Please fill all required fields', 'error'); return;
@@ -1779,16 +1857,24 @@ async function submitAddProject() {
   const url = `${APPS_SCRIPT_URL}?action=addActive&name=${encodeURIComponent(name)}&status=${encodeURIComponent(status)}&category=${encodeURIComponent(cat)}&major=${encodeURIComponent(major)}`;
 
   try {
-    // Always submit the project
     await fetch(url, { mode: 'no-cors' });
 
-    // If a note was entered, submit it too via Form 3
+    // Submit note if entered
     if (note) {
       const noteBody = new URLSearchParams();
       noteBody.append(F3.name, name);
       noteBody.append(F3.note, note);
       await fetch(FORM3_URL, { method: 'POST', mode: 'no-cors', body: noteBody });
-      notesMap[name] = note; // update local map immediately
+      notesMap[name] = note;
+    }
+
+    // Submit deadline if entered
+    if (deadline) {
+      const dlBody = new URLSearchParams();
+      dlBody.append(F4.name, name);
+      dlBody.append(F4.deadline, deadline);
+      await fetch(FORM4_URL, { method: 'POST', mode: 'no-cors', body: dlBody });
+      deadlinesMap[name] = deadline;
     }
 
     showToast(`"${name}" added successfully!`, 'success');
@@ -1797,6 +1883,7 @@ async function submitAddProject() {
     document.getElementById('add-category').value = '';
     document.getElementById('add-major').value = 'Standalone';
     document.getElementById('add-notes').value = '';
+    document.getElementById('add-deadline').value = '';
     document.getElementById('cat-suggest').style.display = 'none';
     setTimeout(() => fetchActiveProjects(), 2500);
   } catch (e) {
