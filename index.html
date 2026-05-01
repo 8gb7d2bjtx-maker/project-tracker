@@ -390,17 +390,20 @@
   }
 
   .project-card {
-    background: var(--surface2);
+    background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    padding: 10px 12px;
+    padding: 8px 12px;
     transition: border-color var(--transition), box-shadow var(--transition);
     cursor: grab;
     user-select: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
   }
   .project-card:hover {
     border-color: var(--border2);
-    box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+    box-shadow: 0 1px 6px rgba(0,0,0,0.08);
   }
   .project-card.dragging {
     opacity: 0.4;
@@ -412,92 +415,43 @@
   }
   .kanban-col.drop-target {
     border-color: var(--accent);
-    background: color-mix(in srgb, var(--surface) 90%, var(--accent) 10%);
+    background: color-mix(in srgb, var(--surface) 94%, var(--accent) 6%);
   }
 
-  /* Row 1: name + action buttons */
-  .card-top {
-    display: flex;
-    align-items: flex-start;
-    gap: 6px;
-  }
   .card-name {
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 500;
     color: var(--text);
-    line-height: 1.4;
+    line-height: 1.3;
     flex: 1;
     min-width: 0;
   }
   .card-actions {
     display: flex;
     align-items: center;
-    gap: 2px;
+    gap: 1px;
     flex-shrink: 0;
-    margin-top: 1px;
   }
-  .done-btn {
+  .card-action-btn {
     background: none;
     border: none;
     color: var(--text3);
     font-size: 13px;
-    padding: 3px 5px;
+    padding: 3px 6px;
     cursor: pointer;
     border-radius: var(--radius);
     transition: all var(--transition);
     flex-shrink: 0;
     line-height: 1;
   }
-  .done-btn:hover { color: var(--green); background: var(--green-bg); }
-  .delete-btn {
-    background: none;
-    border: none;
-    color: var(--text3);
-    font-size: 12px;
-    line-height: 1;
-    padding: 3px 5px;
-    cursor: pointer;
-    border-radius: var(--radius);
-    transition: all var(--transition);
-    flex-shrink: 0;
-  }
-  .delete-btn:hover { color: var(--red); background: var(--red-bg); }
-
-  /* Row 2: expandable drawer */
-  .card-drawer-toggle {
-    width: 100%;
-    background: none;
-    border: none;
-    color: var(--text3);
-    font-family: 'DM Sans', sans-serif;
-    font-size: 11px;
-    padding: 5px 0 0;
-    margin-top: 5px;
-    cursor: pointer;
-    text-align: left;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    transition: color var(--transition);
-    border-top: 1px solid var(--border);
-  }
-  .card-drawer-toggle:hover { color: var(--text2); }
-  .card-drawer-toggle.has-notes { color: var(--accent); }
-  .card-drawer-toggle .toggle-arrow {
-    display: inline-block;
-    font-size: 8px;
-    transition: transform 0.2s ease;
-  }
-  .card-drawer-toggle.open .toggle-arrow { transform: rotate(90deg); }
-
-  .card-drawer-body {
-    display: none;
-    padding-top: 10px;
-  }
-  .card-drawer-body.open { display: block; }
+  .card-action-btn:hover { background: var(--surface3); color: var(--text2); }
+  .card-action-btn.notes-btn:hover { color: var(--accent); background: var(--accent-glow); }
+  .card-action-btn.notes-btn.has-notes { color: var(--accent); }
+  .card-action-btn.done-btn:hover  { color: var(--green); background: var(--green-bg); }
+  .card-action-btn.delete-btn:hover { color: var(--red); background: var(--red-bg); }
 
   .card-pills {
-    display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 10px;
+    display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 12px;
   }
   .pill {
     font-size: 10px;
@@ -509,34 +463,86 @@
   .pill-cat { background: var(--blue-bg); color: var(--blue); }
   .pill-maj { background: var(--purple-bg); color: var(--purple); }
 
-  .card-notes-body textarea {
+  /* Notes modal */
+  .notes-modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.3);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    backdrop-filter: blur(3px);
+  }
+  .notes-modal-overlay.open { display: flex; }
+  .notes-modal {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius-lg);
+    padding: 24px;
     width: 100%;
-    background: var(--surface3);
+    max-width: 420px;
+    box-shadow: 0 16px 48px rgba(0,0,0,0.15);
+    animation: modal-in 0.18s cubic-bezier(0.34,1.2,0.64,1);
+  }
+  .notes-modal-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 14px;
+    gap: 10px;
+  }
+  .notes-modal-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    line-height: 1.4;
+  }
+  .notes-modal-close {
+    background: none;
+    border: none;
+    color: var(--text3);
+    font-size: 16px;
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: var(--radius);
+    transition: all var(--transition);
+    flex-shrink: 0;
+    line-height: 1;
+  }
+  .notes-modal-close:hover { color: var(--text); background: var(--surface3); }
+  .notes-modal-pills {
+    display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 14px;
+  }
+  .notes-modal textarea {
+    width: 100%;
+    background: var(--surface2);
     border: 1px solid var(--border);
     border-radius: var(--radius);
     color: var(--text);
     font-family: 'DM Sans', sans-serif;
-    font-size: 12px;
-    padding: 8px 10px;
+    font-size: 13px;
+    padding: 10px 12px;
     resize: vertical;
-    min-height: 64px;
+    min-height: 80px;
     outline: none;
     transition: border-color var(--transition);
     line-height: 1.5;
   }
-  .card-notes-body textarea:focus { border-color: var(--accent); }
-  .card-notes-body textarea::placeholder { color: var(--text3); }
+  .notes-modal textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-glow); }
+  .notes-modal textarea::placeholder { color: var(--text3); }
   .notes-save-row {
-    display: flex; align-items: center; gap: 8px; margin-top: 6px;
+    display: flex; align-items: center; gap: 8px; margin-top: 10px;
   }
   .notes-save-btn {
     background: var(--accent);
     border: none;
     color: #fff;
     border-radius: var(--radius);
-    padding: 5px 12px;
+    padding: 7px 16px;
     font-family: 'DM Sans', sans-serif;
-    font-size: 11px;
+    font-size: 13px;
     font-weight: 500;
     cursor: pointer;
     transition: background var(--transition);
@@ -546,7 +552,6 @@
   .notes-status {
     font-size: 11px;
     font-family: 'DM Mono', monospace;
-    transition: color var(--transition);
   }
 
   /* Column color themes */
@@ -1073,6 +1078,22 @@
   </main>
 </div>
 
+<!-- NOTES MODAL -->
+<div class="notes-modal-overlay" id="notes-modal">
+  <div class="notes-modal">
+    <div class="notes-modal-header">
+      <div class="notes-modal-title" id="notes-modal-title">—</div>
+      <button class="notes-modal-close" onclick="closeNotesModal()">✕</button>
+    </div>
+    <div class="notes-modal-pills" id="notes-modal-pills"></div>
+    <textarea id="notes-modal-textarea" placeholder="Add notes, links, context…" rows="4"></textarea>
+    <div class="notes-save-row">
+      <button class="notes-save-btn" id="notes-modal-save-btn" onclick="saveNoteFromModal()">Save note</button>
+      <span class="notes-status" id="notes-modal-status"></span>
+    </div>
+  </div>
+</div>
+
 <!-- COMPLETE MODAL -->
 <div class="modal-overlay" id="complete-modal">
   <div class="modal">
@@ -1507,44 +1528,14 @@ function createCard(project) {
   card.className = 'project-card';
   card.draggable = true;
 
-  const showMajor = project.major && project.major.toLowerCase() !== 'standalone';
-  const savedNote = notesMap[project.name] || '';
-  const hasNote = savedNote.trim().length > 0;
-  const hasPills = project.category || showMajor;
-  const drawerLabel = hasNote ? '▶ Notes' : (hasPills ? '▶ Details' : '▶ Add note');
-
-  // Make links in notes clickable
-  function linkify(text) {
-    return escHtml(text).replace(
-      /(https?:\/\/[^\s<]+)/g,
-      '<a href="$1" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:underline;word-break:break-all;" onclick="event.stopPropagation()">$1</a>'
-    );
-  }
+  const hasNote = !!(notesMap[project.name] || '').trim();
 
   card.innerHTML = `
-    <div class="card-top">
-      <div class="card-name">${escHtml(project.name)}</div>
-      <div class="card-actions">
-        <button class="done-btn" title="Mark complete">✓</button>
-        <button class="delete-btn" title="Remove project">✕</button>
-      </div>
-    </div>
-    <button class="card-drawer-toggle ${hasNote ? 'has-notes' : ''}">
-      <span class="toggle-arrow">▶</span>
-      <span class="drawer-label">${hasNote ? ' Notes' : (hasPills ? ' Details' : ' Add note')}</span>
-    </button>
-    <div class="card-drawer-body">
-      ${hasPills ? `<div class="card-pills">
-        ${project.category ? `<span class="pill pill-cat">${escHtml(project.category)}</span>` : ''}
-        ${showMajor ? `<span class="pill pill-maj">${escHtml(project.major)}</span>` : ''}
-      </div>` : ''}
-      <div class="card-notes-body">
-        <textarea placeholder="Add notes, links, context…" rows="3">${escHtml(savedNote)}</textarea>
-        <div class="notes-save-row">
-          <button class="notes-save-btn">Save note</button>
-          <span class="notes-status"></span>
-        </div>
-      </div>
+    <div class="card-name">${escHtml(project.name)}</div>
+    <div class="card-actions">
+      <button class="card-action-btn notes-btn ${hasNote ? 'has-notes' : ''}" title="${hasNote ? 'View/edit note' : 'Add note'}">🛈</button>
+      <button class="card-action-btn done-btn" title="Mark complete">✓</button>
+      <button class="card-action-btn delete-btn" title="Remove project">✕</button>
     </div>`;
 
   // ── Drag and drop ──
@@ -1554,6 +1545,12 @@ function createCard(project) {
     setTimeout(() => card.classList.add('dragging'), 0);
   });
   card.addEventListener('dragend', () => card.classList.remove('dragging'));
+
+  // ── Notes button ──
+  card.querySelector('.notes-btn').addEventListener('click', e => {
+    e.stopPropagation();
+    openNotesModal(project, card.querySelector('.notes-btn'));
+  });
 
   // ── Done button ──
   card.querySelector('.done-btn').addEventListener('click', e => {
@@ -1577,52 +1574,78 @@ function createCard(project) {
     }
   });
 
-  // ── Drawer toggle ──
-  const toggle    = card.querySelector('.card-drawer-toggle');
-  const drawerBody = card.querySelector('.card-drawer-body');
-  const textarea  = card.querySelector('textarea');
-  const saveBtn   = card.querySelector('.notes-save-btn');
-  const statusEl  = card.querySelector('.notes-status');
-  const labelEl   = card.querySelector('.drawer-label');
-
-  toggle.addEventListener('click', () => {
-    const isOpen = drawerBody.classList.toggle('open');
-    toggle.classList.toggle('open', isOpen);
-    if (isOpen && !hasNote) textarea.focus();
-  });
-
-  // ── Save note ──
-  saveBtn.addEventListener('click', async () => {
-    const val = textarea.value.trim();
-    saveBtn.disabled = true;
-    statusEl.textContent = 'Saving…';
-    statusEl.style.color = 'var(--text3)';
-
-    const formBody = new URLSearchParams();
-    formBody.append(F3.name, project.name);
-    formBody.append(F3.note, val);
-
-    try {
-      await fetch(FORM3_URL, { method: 'POST', mode: 'no-cors', body: formBody });
-      notesMap[project.name] = val;
-      const hasNoteNow = val.length > 0;
-      toggle.classList.toggle('has-notes', hasNoteNow);
-      labelEl.textContent = hasNoteNow ? ' Notes' : (hasPills ? ' Details' : ' Add note');
-      statusEl.textContent = 'Saved ✓';
-      statusEl.style.color = 'var(--green)';
-      setTimeout(() => { statusEl.textContent = ''; }, 2500);
-    } catch (err) {
-      statusEl.textContent = 'Error — try again';
-      statusEl.style.color = 'var(--red)';
-    } finally {
-      saveBtn.disabled = false;
-    }
-  });
-
   return card;
 }
 
-// ── COMPLETE MODAL ───────────────────────────────────────────────
+// ── NOTES MODAL ──────────────────────────────────────────────────
+let currentNotesProject = null;
+let currentNotesBtn = null;
+
+function openNotesModal(project, btn) {
+  currentNotesProject = project;
+  currentNotesBtn = btn;
+
+  const showMajor = project.major && project.major.toLowerCase() !== 'standalone';
+  document.getElementById('notes-modal-title').textContent = project.name;
+
+  const pillsEl = document.getElementById('notes-modal-pills');
+  pillsEl.innerHTML = [
+    project.category ? `<span class="pill pill-cat">${escHtml(project.category)}</span>` : '',
+    showMajor       ? `<span class="pill pill-maj">${escHtml(project.major)}</span>`  : '',
+  ].join('');
+
+  const savedNote = notesMap[project.name] || '';
+  const textarea = document.getElementById('notes-modal-textarea');
+  textarea.value = savedNote;
+  document.getElementById('notes-modal-status').textContent = '';
+  document.getElementById('notes-modal-save-btn').disabled = false;
+  document.getElementById('notes-modal').classList.add('open');
+  setTimeout(() => textarea.focus(), 50);
+}
+
+function closeNotesModal() {
+  document.getElementById('notes-modal').classList.remove('open');
+  currentNotesProject = null;
+  currentNotesBtn = null;
+}
+
+async function saveNoteFromModal() {
+  if (!currentNotesProject) return;
+  const textarea = document.getElementById('notes-modal-textarea');
+  const saveBtn  = document.getElementById('notes-modal-save-btn');
+  const statusEl = document.getElementById('notes-modal-status');
+  const val = textarea.value.trim();
+
+  saveBtn.disabled = true;
+  statusEl.textContent = 'Saving…';
+  statusEl.style.color = 'var(--text3)';
+
+  const formBody = new URLSearchParams();
+  formBody.append(F3.name, currentNotesProject.name);
+  formBody.append(F3.note, val);
+
+  try {
+    await fetch(FORM3_URL, { method: 'POST', mode: 'no-cors', body: formBody });
+    notesMap[currentNotesProject.name] = val;
+    // Update the notes button highlight on the card
+    if (currentNotesBtn) {
+      currentNotesBtn.classList.toggle('has-notes', val.length > 0);
+      currentNotesBtn.title = val.length > 0 ? 'View/edit note' : 'Add note';
+    }
+    statusEl.textContent = 'Saved ✓';
+    statusEl.style.color = 'var(--green)';
+    setTimeout(() => closeNotesModal(), 900);
+  } catch(err) {
+    statusEl.textContent = 'Error — try again';
+    statusEl.style.color = 'var(--red)';
+    saveBtn.disabled = false;
+  }
+}
+
+// Close notes modal on overlay click
+document.getElementById('notes-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeNotesModal();
+});
 function openCompleteModal(project) {
   currentModalProject = project;
   document.getElementById('modal-project-name').textContent = project.name;
