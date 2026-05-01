@@ -1086,6 +1086,7 @@
       <button class="notes-modal-close" onclick="closeNotesModal()">✕</button>
     </div>
     <div class="notes-modal-pills" id="notes-modal-pills"></div>
+    <div id="notes-modal-preview" style="display:none;font-size:13px;line-height:1.6;color:var(--text);background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;margin-bottom:10px;white-space:pre-wrap;word-break:break-word;"></div>
     <textarea id="notes-modal-textarea" placeholder="Add notes, links, context…" rows="4"></textarea>
     <div class="notes-save-row">
       <button class="notes-save-btn" id="notes-modal-save-btn" onclick="saveNoteFromModal()">Save note</button>
@@ -1581,6 +1582,13 @@ function createCard(project) {
 let currentNotesProject = null;
 let currentNotesBtn = null;
 
+function linkify(text) {
+  return escHtml(text).replace(
+    /(https?:\/\/[^\s<]+)/g,
+    '<a href="$1" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:underline;word-break:break-all;">$1</a>'
+  );
+}
+
 function openNotesModal(project, btn) {
   currentNotesProject = project;
   currentNotesBtn = btn;
@@ -1591,16 +1599,31 @@ function openNotesModal(project, btn) {
   const pillsEl = document.getElementById('notes-modal-pills');
   pillsEl.innerHTML = [
     project.category ? `<span class="pill pill-cat">${escHtml(project.category)}</span>` : '',
-    showMajor       ? `<span class="pill pill-maj">${escHtml(project.major)}</span>`  : '',
+    showMajor        ? `<span class="pill pill-maj">${escHtml(project.major)}</span>`     : '',
   ].join('');
 
   const savedNote = notesMap[project.name] || '';
-  const textarea = document.getElementById('notes-modal-textarea');
+  const textarea  = document.getElementById('notes-modal-textarea');
+  const preview   = document.getElementById('notes-modal-preview');
+
   textarea.value = savedNote;
   document.getElementById('notes-modal-status').textContent = '';
   document.getElementById('notes-modal-save-btn').disabled = false;
+
+  // Show linkified preview if note exists, hide if empty
+  if (savedNote.trim()) {
+    preview.innerHTML = linkify(savedNote);
+    preview.style.display = 'block';
+    textarea.style.display = 'none';
+    document.getElementById('notes-modal-save-btn').textContent = 'Edit note';
+  } else {
+    preview.style.display = 'none';
+    textarea.style.display = 'block';
+    document.getElementById('notes-modal-save-btn').textContent = 'Save note';
+  }
+
   document.getElementById('notes-modal').classList.add('open');
-  setTimeout(() => textarea.focus(), 50);
+  if (!savedNote.trim()) setTimeout(() => textarea.focus(), 50);
 }
 
 function closeNotesModal() {
@@ -1611,11 +1634,21 @@ function closeNotesModal() {
 
 async function saveNoteFromModal() {
   if (!currentNotesProject) return;
-  const textarea = document.getElementById('notes-modal-textarea');
-  const saveBtn  = document.getElementById('notes-modal-save-btn');
-  const statusEl = document.getElementById('notes-modal-status');
-  const val = textarea.value.trim();
+  const textarea  = document.getElementById('notes-modal-textarea');
+  const preview   = document.getElementById('notes-modal-preview');
+  const saveBtn   = document.getElementById('notes-modal-save-btn');
+  const statusEl  = document.getElementById('notes-modal-status');
 
+  // If we're in preview mode, switch to edit mode instead of saving
+  if (saveBtn.textContent === 'Edit note') {
+    preview.style.display = 'none';
+    textarea.style.display = 'block';
+    saveBtn.textContent = 'Save note';
+    setTimeout(() => textarea.focus(), 50);
+    return;
+  }
+
+  const val = textarea.value.trim();
   saveBtn.disabled = true;
   statusEl.textContent = 'Saving…';
   statusEl.style.color = 'var(--text3)';
@@ -1627,14 +1660,23 @@ async function saveNoteFromModal() {
   try {
     await fetch(FORM3_URL, { method: 'POST', mode: 'no-cors', body: formBody });
     notesMap[currentNotesProject.name] = val;
-    // Update the notes button highlight on the card
     if (currentNotesBtn) {
       currentNotesBtn.classList.toggle('has-notes', val.length > 0);
       currentNotesBtn.title = val.length > 0 ? 'View/edit note' : 'Add note';
     }
     statusEl.textContent = 'Saved ✓';
     statusEl.style.color = 'var(--green)';
-    setTimeout(() => closeNotesModal(), 900);
+    // Switch to preview after saving
+    if (val) {
+      preview.innerHTML = linkify(val);
+      preview.style.display = 'block';
+      textarea.style.display = 'none';
+      saveBtn.textContent = 'Edit note';
+      saveBtn.disabled = false;
+      setTimeout(() => { statusEl.textContent = ''; }, 2000);
+    } else {
+      setTimeout(() => closeNotesModal(), 900);
+    }
   } catch(err) {
     statusEl.textContent = 'Error — try again';
     statusEl.style.color = 'var(--red)';
