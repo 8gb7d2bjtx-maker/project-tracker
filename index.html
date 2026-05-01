@@ -392,8 +392,9 @@
   .project-card {
     background: var(--surface);
     border: 1px solid var(--border);
+    border-left: 3px solid transparent;
     border-radius: var(--radius);
-    padding: 8px 12px;
+    padding: 8px 12px 8px 10px;
     transition: border-color var(--transition), box-shadow var(--transition);
     cursor: grab;
     user-select: none;
@@ -403,7 +404,15 @@
   }
   .project-card:hover {
     border-color: var(--border2);
+    border-left-color: transparent;
     box-shadow: 0 1px 6px rgba(0,0,0,0.08);
+  }
+  .project-card.focused {
+    border-left-color: var(--accent) !important;
+    background: color-mix(in srgb, var(--surface) 96%, var(--accent) 4%);
+  }
+  .project-card.focused .card-name {
+    font-weight: 600;
   }
   .project-card.dragging {
     opacity: 0.4;
@@ -1530,14 +1539,26 @@ function createCard(project) {
   card.draggable = true;
 
   const hasNote = !!(notesMap[project.name] || '').trim();
+  const isFocused = focusedCards.has(project.name);
 
   card.innerHTML = `
-    <div class="card-name">${escHtml(project.name)}</div>
+    <div class="card-name" style="cursor:pointer">${escHtml(project.name)}</div>
     <div class="card-actions">
       <button class="card-action-btn notes-btn ${hasNote ? 'has-notes' : ''}" title="${hasNote ? 'View/edit note' : 'Add note'}">🛈</button>
       <button class="card-action-btn done-btn" title="Mark complete">✓</button>
       <button class="card-action-btn delete-btn" title="Remove project">✕</button>
     </div>`;
+
+  if (isFocused) card.classList.add('focused');
+
+  // ── Focus toggle (click name) ──
+  card.querySelector('.card-name').addEventListener('click', e => {
+    e.stopPropagation();
+    const nowFocused = card.classList.toggle('focused');
+    if (nowFocused) focusedCards.add(project.name);
+    else focusedCards.delete(project.name);
+    saveFocusedCards();
+  });
 
   // ── Drag and drop ──
   card.addEventListener('dragstart', e => {
@@ -1567,6 +1588,8 @@ function createCard(project) {
     try {
       await fetch(url, { mode: 'no-cors' });
       activeProjects = activeProjects.filter(p => p.name !== project.name);
+      focusedCards.delete(project.name);
+      saveFocusedCards();
       updateCountsAndMeta();
       renderKanban();
       showToast(`"${project.name}" removed`, 'success');
@@ -1723,6 +1746,8 @@ async function submitComplete() {
   try {
     await fetch(url, { mode: 'no-cors' });
     showToast(`"${currentModalProject.name}" marked complete!`, 'success');
+    focusedCards.delete(currentModalProject.name);
+    saveFocusedCards();
     closeModal();
     activeProjects = activeProjects.filter(p => p.name !== currentModalProject?.name);
     document.getElementById('count-active').textContent = activeProjects.length;
@@ -1946,7 +1971,13 @@ document.getElementById('complete-modal').addEventListener('click', function(e) 
 });
 
 // ── SETTINGS ─────────────────────────────────────────────────────
-const LS_CATS = 'risd_custom_categories';
+const LS_CATS  = 'risd_custom_categories';
+const LS_FOCUS = 'risd_focused_cards';
+let focusedCards = new Set(JSON.parse(localStorage.getItem(LS_FOCUS) || '[]'));
+
+function saveFocusedCards() {
+  localStorage.setItem(LS_FOCUS, JSON.stringify([...focusedCards]));
+}
 
 function loadPersistedCategories() {
   const savedCats = localStorage.getItem(LS_CATS);
