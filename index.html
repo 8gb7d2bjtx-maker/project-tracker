@@ -458,8 +458,8 @@
   .card-action-btn.done-btn:hover  { color: var(--green); background: var(--green-bg); }
   .card-action-btn.delete-btn:hover { color: var(--red); background: var(--red-bg); }
   .card-deadline {
-    font-family: 'DM Mono', monospace;
-    font-size: 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px;
     color: var(--text3);
     margin-right: 2px;
   }
@@ -1107,7 +1107,7 @@
     <div class="notes-modal-pills" id="notes-modal-pills"></div>
     <div class="form-group" style="margin-bottom:12px;">
       <label for="notes-modal-deadline" style="font-size:11px;">Deadline <span style="color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
-      <input type="date" id="notes-modal-deadline" style="width:100%;">
+      <input type="date" id="notes-modal-deadline" style="width:100%;" onchange="autoSaveDeadline()">
     </div>
     <div id="notes-modal-preview" style="display:none;font-size:13px;line-height:1.6;color:var(--text);background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;margin-bottom:10px;white-space:pre-wrap;word-break:break-word;"></div>
     <textarea id="notes-modal-textarea" placeholder="Add notes, links, context…" rows="4"></textarea>
@@ -1703,6 +1703,51 @@ function closeNotesModal() {
   currentNotesBtn = null;
 }
 
+async function autoSaveDeadline() {
+  if (!currentNotesProject) return;
+  const deadline = document.getElementById('notes-modal-deadline').value;
+  const prevDeadline = deadlinesMap[currentNotesProject.name] || '';
+  if (deadline === prevDeadline) return;
+
+  const statusEl = document.getElementById('notes-modal-status');
+  statusEl.textContent = 'Saving…';
+  statusEl.style.color = 'var(--text3)';
+
+  const dlBody = new URLSearchParams();
+  dlBody.append(F4.name, currentNotesProject.name);
+  dlBody.append(F4.deadline, deadline);
+
+  try {
+    await fetch(FORM4_URL, { method: 'POST', mode: 'no-cors', body: dlBody });
+    deadlinesMap[currentNotesProject.name] = deadline;
+
+    // Update deadline on card immediately
+    document.querySelectorAll('.card-name').forEach(el => {
+      if (el.textContent === currentNotesProject.name) {
+        const actionsEl = el.closest('.project-card').querySelector('.card-actions');
+        let dlSpan = actionsEl.querySelector('.card-deadline');
+        if (deadline) {
+          if (!dlSpan) {
+            dlSpan = document.createElement('span');
+            dlSpan.className = 'card-deadline';
+            actionsEl.insertBefore(dlSpan, actionsEl.firstChild);
+          }
+          dlSpan.textContent = formatDeadline(deadline);
+        } else if (dlSpan) {
+          dlSpan.remove();
+        }
+      }
+    });
+
+    statusEl.textContent = 'Deadline saved ✓';
+    statusEl.style.color = 'var(--green)';
+    setTimeout(() => { statusEl.textContent = ''; }, 2000);
+  } catch(err) {
+    statusEl.textContent = 'Could not save deadline';
+    statusEl.style.color = 'var(--red)';
+  }
+}
+
 async function saveNoteFromModal() {
   if (!currentNotesProject) return;
   const textarea  = document.getElementById('notes-modal-textarea');
@@ -1720,7 +1765,6 @@ async function saveNoteFromModal() {
   }
 
   const val      = textarea.value.trim();
-  const deadline = document.getElementById('notes-modal-deadline').value;
   saveBtn.disabled = true;
   statusEl.textContent = 'Saving…';
   statusEl.style.color = 'var(--text3)';
@@ -1732,33 +1776,6 @@ async function saveNoteFromModal() {
   try {
     await fetch(FORM3_URL, { method: 'POST', mode: 'no-cors', body: formBody });
     notesMap[currentNotesProject.name] = val;
-
-    // Save deadline if it changed
-    const prevDeadline = deadlinesMap[currentNotesProject.name] || '';
-    if (deadline !== prevDeadline) {
-      const dlBody = new URLSearchParams();
-      dlBody.append(F4.name, currentNotesProject.name);
-      dlBody.append(F4.deadline, deadline);
-      await fetch(FORM4_URL, { method: 'POST', mode: 'no-cors', body: dlBody });
-      deadlinesMap[currentNotesProject.name] = deadline;
-      // Update deadline on card immediately
-      document.querySelectorAll('.card-name').forEach(el => {
-        if (el.textContent === currentNotesProject.name) {
-          const actionsEl = el.closest('.project-card').querySelector('.card-actions');
-          let dlSpan = actionsEl.querySelector('.card-deadline');
-          if (deadline) {
-            if (!dlSpan) {
-              dlSpan = document.createElement('span');
-              dlSpan.className = 'card-deadline';
-              actionsEl.insertBefore(dlSpan, actionsEl.firstChild);
-            }
-            dlSpan.textContent = formatDeadline(deadline);
-          } else if (dlSpan) {
-            dlSpan.remove();
-          }
-        }
-      });
-    }
 
     if (currentNotesBtn) {
       currentNotesBtn.classList.toggle('has-notes', val.length > 0);
