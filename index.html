@@ -1041,7 +1041,7 @@
       </div>
     </div>
     <nav>
-      <button class="tab-btn active" data-tab="active">Active Projects <span class="tab-count" id="count-active">—</span></button>
+      <button class="tab-btn active" data-tab="active">Projects <span class="tab-count" id="count-active">—</span></button>
       <button class="tab-btn" data-tab="completed">Completed <span class="tab-count" id="count-completed">—</span></button>
       <button class="tab-btn" data-tab="summary">Summary</button>
       <button class="tab-btn" data-tab="settings">⚙ Settings</button>
@@ -1053,16 +1053,16 @@
     <!-- ACTIVE PROJECTS -->
     <div class="tab-panel active" id="tab-active">
       <div class="kanban-header">
-        <div style="display:flex;align-items:center;gap:8px;">
+        <span class="kanban-meta" id="active-meta"></span>
+        <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
+          <button class="refresh-icon-btn" id="refresh-icon-btn" onclick="refreshAll(this)" title="Refresh data">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 .49-3"></path></svg>
+          </button>
           <button class="add-project-toggle-btn" id="add-panel-btn" onclick="toggleAddPanel()">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
             Add Project
           </button>
-          <button class="refresh-icon-btn" id="refresh-icon-btn" onclick="refreshAll(this)" title="Refresh data">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 .49-3"></path></svg>
-          </button>
         </div>
-        <span class="kanban-meta" id="active-meta"></span>
       </div>
       <div class="kanban-with-panel" id="kanban-with-panel">
         <div class="kanban-board" id="kanban-board">
@@ -1125,16 +1125,14 @@
 
     <!-- COMPLETED -->
     <div class="tab-panel" id="tab-completed">
-      <div class="section-header">
-        <button class="btn-csv" onclick="downloadCSV()">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-          Export CSV
-        </button>
-      </div>
       <div class="filter-row" id="filter-row">
         <select id="filter-month" onchange="renderCompletedTable()"><option value="">All Months</option></select>
         <select id="filter-category" onchange="renderCompletedTable()"><option value="">All Categories</option></select>
         <select id="filter-major" onchange="renderCompletedTable()"><option value="">All Major Projects</option></select>
+        <button class="btn-csv" onclick="downloadCSV()">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+          Export CSV
+        </button>
       </div>
       <div class="table-wrap">
         <div id="completed-table-wrap">
@@ -1725,7 +1723,7 @@ function createCard(project) {
   // ── Delete button ──
   card.querySelector('.delete-btn').addEventListener('click', async e => {
     e.stopPropagation();
-    if (!confirm(`Remove "${project.name}" from Active Projects?\n\nThis cannot be undone.`)) return;
+    if (!confirm(`Remove "${project.name}" from Projects?\n\nThis cannot be undone.`)) return;
     const url = `${APPS_SCRIPT_URL}?action=deleteActive&name=${encodeURIComponent(project.name)}`;
     try {
       await fetch(url, { mode: 'no-cors' });
@@ -2052,7 +2050,7 @@ function renderCompletedTable() {
   const fCat   = document.getElementById('filter-category').value;
   const fMajor = document.getElementById('filter-major').value;
 
-  let filtered = completedProjects;
+  let filtered = [...completedProjects].reverse();
   if (fMonth) filtered = filtered.filter(p => p.month === fMonth);
   if (fCat)   filtered = filtered.filter(p => p.category === fCat);
   if (fMajor) filtered = filtered.filter(p => p.major === fMajor);
