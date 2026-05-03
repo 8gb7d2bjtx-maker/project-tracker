@@ -56,8 +56,8 @@
     padding: 0 24px;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    height: 56px;
+    gap: 24px;
+    height: 52px;
     flex-shrink: 0;
     position: relative;
     z-index: 10;
@@ -67,6 +67,7 @@
     display: flex;
     align-items: center;
     gap: 10px;
+    flex-shrink: 0;
   }
   .logo-mark {
     width: 28px; height: 28px;
@@ -96,51 +97,35 @@
   .header-right {
     display: flex; align-items: center; gap: 10px;
   }
-  .refresh-btn {
+  .refresh-icon-btn {
     background: var(--surface2);
     border: 1px solid var(--border);
-    color: var(--text2);
-    border-radius: var(--radius);
-    padding: 6px 12px;
-    font-family: 'DM Sans', sans-serif;
-    font-size: 12px;
-    cursor: pointer;
-    display: flex; align-items: center; gap: 6px;
-    transition: all var(--transition);
-  }
-  .refresh-btn:hover { background: var(--surface3); color: var(--text); border-color: var(--border2); }
-  .refresh-btn svg { transition: transform 0.6s ease; }
-  .refresh-btn.spinning svg { transform: rotate(360deg); }
-
-  .sync-indicator {
-    font-family: 'DM Mono', monospace;
-    font-size: 10px;
     color: var(--text3);
+    border-radius: var(--radius);
+    width: 30px; height: 30px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    transition: all var(--transition);
+    flex-shrink: 0;
   }
-  .sync-dot {
-    display: inline-block;
-    width: 6px; height: 6px;
-    border-radius: 50%;
-    background: var(--green);
-    margin-right: 5px;
-    animation: pulse 2.5s infinite;
-  }
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  .refresh-icon-btn:hover { background: var(--surface3); color: var(--text); border-color: var(--border2); }
+  .refresh-icon-btn svg { transition: transform 0.6s ease; }
+  .refresh-icon-btn.spinning svg { transform: rotate(360deg); }
 
   /* ── TABS ── */
   nav {
-    background: var(--surface);
-    border-bottom: 1px solid var(--border);
-    padding: 0 24px;
     display: flex;
     gap: 2px;
-    flex-shrink: 0;
+    flex: 1;
+    align-items: center;
+    height: 100%;
   }
   .tab-btn {
     background: none;
     border: none;
     color: var(--text3);
-    padding: 10px 14px;
+    padding: 0 14px;
+    height: 52px;
     font-family: 'DM Sans', sans-serif;
     font-size: 13px;
     font-weight: 500;
@@ -468,35 +453,45 @@
     .kanban-row.row-top,
     .kanban-row.row-bottom { grid-template-columns: 1fr; }
 
-    .kanban-board { padding: 0 12px 24px; }
+    .kanban-board {
+      padding: 0 12px 24px;
+      overflow-y: visible; /* let the parent scroll on mobile */
+      flex: none;
+    }
 
-    /* On mobile the panel slides down from top instead of right */
-    .kanban-with-panel { flex-direction: column; overflow: visible; }
+    /* On mobile the whole tab scrolls, not just the board */
+    #tab-active { overflow-y: auto; }
+
+    /* Panel slides down from top */
+    .kanban-with-panel {
+      flex-direction: column;
+      overflow: visible;
+      flex: none;
+    }
 
     .add-panel {
       width: 100% !important;
       height: 0;
+      overflow: hidden;
       border-left: none;
       border-bottom: 1px solid var(--border);
-      order: -1; /* appears above board */
+      order: -1;
       transition: height 0.3s cubic-bezier(0.16,1,0.3,1);
     }
     .add-panel.open {
-      width: 100% !important;
       height: auto;
       max-height: 80vh;
+      overflow-y: auto;
     }
-    .add-panel-body { max-height: 70vh; }
+    .add-panel-body { max-height: none; }
 
-    /* Smaller nav text on mobile */
-    .tab-btn { font-size: 12px; padding: 10px 10px; }
+    /* Smaller nav on mobile */
+    .tab-btn { font-size: 11px; padding: 0 8px; }
     .tab-count { display: none; }
     .logo-sub { display: none; }
-    .sync-indicator { display: none; }
-
-    /* Header more compact */
-    header { padding: 0 12px; }
-    nav { padding: 0 8px; overflow-x: auto; }
+    header { padding: 0 12px; gap: 12px; }
+    nav { overflow-x: auto; }
+    .kanban-header { padding: 10px 12px 8px; }
   }
 
   .project-card {
@@ -1045,35 +1040,29 @@
         <div class="logo-sub">Graphic Design</div>
       </div>
     </div>
-    <div class="header-right">
-      <span class="sync-indicator"><span class="sync-dot"></span><span id="lastSync">Never synced</span></span>
-      <button class="refresh-btn" onclick="refreshAll(this)">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 .49-3"></path></svg>
-        Refresh
-      </button>
-    </div>
+    <nav>
+      <button class="tab-btn active" data-tab="active">Active Projects <span class="tab-count" id="count-active">—</span></button>
+      <button class="tab-btn" data-tab="completed">Completed <span class="tab-count" id="count-completed">—</span></button>
+      <button class="tab-btn" data-tab="summary">Summary</button>
+      <button class="tab-btn" data-tab="settings">⚙ Settings</button>
+    </nav>
   </header>
-
-  <nav>
-    <button class="tab-btn active" data-tab="active">Active Projects <span class="tab-count" id="count-active">—</span></button>
-    <button class="tab-btn" data-tab="completed">Completed <span class="tab-count" id="count-completed">—</span></button>
-    <button class="tab-btn" data-tab="summary">Summary</button>
-    <button class="tab-btn" data-tab="settings">⚙ Settings</button>
-  </nav>
 
   <main>
 
     <!-- ACTIVE PROJECTS -->
     <div class="tab-panel active" id="tab-active">
       <div class="kanban-header">
-        <h2>Active Projects</h2>
-        <div style="display:flex;align-items:center;gap:10px;">
-          <span class="kanban-meta" id="active-meta">Loading…</span>
+        <div style="display:flex;align-items:center;gap:8px;">
           <button class="add-project-toggle-btn" id="add-panel-btn" onclick="toggleAddPanel()">
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
             Add Project
           </button>
+          <button class="refresh-icon-btn" id="refresh-icon-btn" onclick="refreshAll(this)" title="Refresh data">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 .49-3"></path></svg>
+          </button>
         </div>
+        <span class="kanban-meta" id="active-meta"></span>
       </div>
       <div class="kanban-with-panel" id="kanban-with-panel">
         <div class="kanban-board" id="kanban-board">
@@ -1137,7 +1126,6 @@
     <!-- COMPLETED -->
     <div class="tab-panel" id="tab-completed">
       <div class="section-header">
-        <h2>Completed Projects</h2>
         <button class="btn-csv" onclick="downloadCSV()">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
           Export CSV
@@ -1157,10 +1145,7 @@
 
     <!-- SUMMARY -->
     <div class="tab-panel" id="tab-summary">
-      <div class="section-header">
-        <h2>Summary</h2>
-      </div>
-      <div class="charts-grid" id="charts-grid">
+      <div class="charts-grid" id="charts-grid" style="padding:24px;">
         <div class="loading"><div class="spinner"></div>Loading data…</div>
       </div>
     </div>
@@ -1408,11 +1393,10 @@ async function fetchAllData() {
   ]);
   updateCountsAndMeta();
   renderKanban();
-  updateLastSync();
 }
 
 async function refreshAll(btn) {
-  if (btn) { btn.classList.add('spinning'); }
+  if (btn) btn.classList.add('spinning');
   await fetchAllData();
   setTimeout(() => { if (btn) btn.classList.remove('spinning'); }, 700);
 }
@@ -1532,7 +1516,6 @@ async function fetchActiveProjectsData() {
 
 function updateCountsAndMeta() {
   document.getElementById('count-active').textContent = activeProjects.length;
-  document.getElementById('active-meta').textContent = `${activeProjects.length} project${activeProjects.length !== 1 ? 's' : ''} across ${Object.values(COL_CONFIG).flat().length} columns`;
 }
 
 // Keep fetchActiveProjects as a convenience for places that only need to reload active data
