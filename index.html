@@ -1419,15 +1419,18 @@ function toggleAddPanel() {
 
 // ── DATA FETCH ───────────────────────────────────────────────────
 async function fetchAllData() {
+  // Fetch core data in parallel — archive tabs load separately so they
+  // can't block the kanban or completed table from rendering
   await Promise.all([
     fetchActiveProjectsData(),
     fetchNotes(),
     fetchDeadlines(),
     fetchCompletedProjects(),
-    fetchArchiveTabs(),
   ]);
   updateCountsAndMeta();
   renderKanban();
+  // Load archive tabs after core data — non-blocking
+  fetchArchiveTabs();
 }
 
 async function refreshAll(btn) {
@@ -1590,15 +1593,19 @@ async function fetchCompletedProjects(tabName = 'Completed Projects') {
 
 async function fetchArchiveTabs() {
   try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
     const url = `${APPS_SCRIPT_URL}?action=getArchiveTabs`;
-    const res = await fetch(url);
+    const res = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeout);
     const data = await res.json();
     if (data.tabs) {
       archiveTabs = data.tabs;
       populateYearSelectors();
     }
   } catch (e) {
-    console.error('Error fetching archive tabs:', e);
+    // Non-critical — year selectors just stay showing "Current Year"
+    console.warn('Could not load archive tabs:', e.message);
   }
 }
 
