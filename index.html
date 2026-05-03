@@ -187,7 +187,7 @@
   .tab-panel.active { display: flex; flex-direction: column; }
 
   /* ── ADD PROJECT ── */
-  #tab-add { padding: 32px 24px; align-items: flex-start; }
+  /* ── ADD PROJECT ── */
   .form-card {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -320,6 +320,30 @@
   .kanban-header h2 { font-size: 15px; font-weight: 600; }
   .kanban-meta { font-size: 12px; color: var(--text3); font-family: 'DM Mono', monospace; }
 
+  .add-project-toggle-btn {
+    background: var(--accent);
+    border: none;
+    color: #fff;
+    border-radius: var(--radius);
+    padding: 6px 12px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    display: flex; align-items: center; gap: 6px;
+    transition: background var(--transition);
+  }
+  .add-project-toggle-btn:hover { background: var(--accent2); }
+  .add-project-toggle-btn.open { background: var(--surface3); color: var(--text2); }
+
+  /* Wrapper that holds board + panel side by side */
+  .kanban-with-panel {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+  }
+
   .kanban-board {
     display: flex;
     flex-direction: column;
@@ -328,7 +352,57 @@
     overflow-y: auto;
     flex: 1;
     padding-top: 4px;
+    transition: margin-right 0.3s cubic-bezier(0.16,1,0.3,1);
+    min-width: 0;
   }
+
+  /* Slide-out panel */
+  .add-panel {
+    width: 0;
+    flex-shrink: 0;
+    overflow: hidden;
+    background: var(--surface);
+    border-left: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    transition: width 0.3s cubic-bezier(0.16,1,0.3,1);
+  }
+  .add-panel.open {
+    width: 320px;
+  }
+  .add-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px 12px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .add-panel-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .add-panel-close {
+    background: none;
+    border: none;
+    color: var(--text3);
+    font-size: 14px;
+    cursor: pointer;
+    border-radius: var(--radius);
+    padding: 3px 6px;
+    transition: all var(--transition);
+    line-height: 1;
+  }
+  .add-panel-close:hover { color: var(--text); background: var(--surface3); }
+  .add-panel-body {
+    padding: 18px;
+    overflow-y: auto;
+    flex: 1;
+  }
+  .add-panel-body .form-group { margin-bottom: 14px; }
+  .add-panel-body .btn-primary { margin-top: 6px; }
+
   .kanban-row {
     display: grid;
     gap: 12px;
@@ -387,6 +461,42 @@
     color: var(--text3);
     font-size: 12px;
     font-family: 'DM Mono', monospace;
+  }
+
+  /* ── MOBILE ── */
+  @media (max-width: 768px) {
+    .kanban-row.row-top,
+    .kanban-row.row-bottom { grid-template-columns: 1fr; }
+
+    .kanban-board { padding: 0 12px 24px; }
+
+    /* On mobile the panel slides down from top instead of right */
+    .kanban-with-panel { flex-direction: column; overflow: visible; }
+
+    .add-panel {
+      width: 100% !important;
+      height: 0;
+      border-left: none;
+      border-bottom: 1px solid var(--border);
+      order: -1; /* appears above board */
+      transition: height 0.3s cubic-bezier(0.16,1,0.3,1);
+    }
+    .add-panel.open {
+      width: 100% !important;
+      height: auto;
+      max-height: 80vh;
+    }
+    .add-panel-body { max-height: 70vh; }
+
+    /* Smaller nav text on mobile */
+    .tab-btn { font-size: 12px; padding: 10px 10px; }
+    .tab-count { display: none; }
+    .logo-sub { display: none; }
+    .sync-indicator { display: none; }
+
+    /* Header more compact */
+    header { padding: 0 12px; }
+    nav { padding: 0 8px; overflow-x: auto; }
   }
 
   .project-card {
@@ -946,88 +1056,81 @@
 
   <nav>
     <button class="tab-btn active" data-tab="active">Active Projects <span class="tab-count" id="count-active">—</span></button>
-    <button class="tab-btn" data-tab="add">+ Add Project</button>
     <button class="tab-btn" data-tab="completed">Completed <span class="tab-count" id="count-completed">—</span></button>
     <button class="tab-btn" data-tab="summary">Summary</button>
     <button class="tab-btn" data-tab="settings">⚙ Settings</button>
   </nav>
 
   <main>
-    <!-- ADD PROJECT -->
-    <div class="tab-panel" id="tab-add">
-      <div style="padding: 32px 24px;">
-        <div class="form-card">
-          <h2>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
-            New Active Project
-          </h2>
-
-          <div class="form-group">
-            <label for="add-name">Project Name</label>
-            <input type="text" id="add-name" placeholder="Name…" autocomplete="off" oninput="autoSuggestCategory(this.value)">
-            <div id="cat-suggest" style="margin-top:6px; display:none;"></div>
-          </div>
-
-          <div class="form-group">
-            <label for="add-status">Status</label>
-            <select id="add-status">
-              <option value="">Select status…</option>
-              <option selected>High Priority</option>
-              <option>1st Draft / Editing</option>
-              <option>Mid Priority</option>
-              <option>Low Priority</option>
-              <option>Waiting on Information</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label for="add-category">Category</label>
-            <select id="add-category">
-              <option value="">Select category…</option>
-            </select>
-            <div class="custom-cat-row">
-              <input type="text" id="custom-cat-input" placeholder="Add custom category…">
-              <button onclick="addCustomCategory()">Add</button>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label for="add-major">Major Project</label>
-            <select id="add-major">
-              <option value="">Select major project…</option>
-            </select>
-            <div class="custom-cat-row">
-              <input type="text" id="custom-major-input" placeholder="Add custom major project…">
-              <button onclick="addCustomMajorProject()">Add</button>
-            </div>
-          </div>
-
-          <div class="form-group">
-            <label for="add-notes">Notes <span style="color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
-            <textarea id="add-notes" placeholder="Add any notes, links, or context…" rows="3" style="resize:vertical;"></textarea>
-          </div>
-
-          <div class="form-group">
-            <label for="add-deadline">Deadline <span style="color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
-            <input type="date" id="add-deadline">
-          </div>
-
-          <button class="btn-primary" id="add-submit-btn" onclick="submitAddProject()">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-            Add Project to Sheet
-          </button>
-        </div>
-      </div>
-    </div>
 
     <!-- ACTIVE PROJECTS -->
     <div class="tab-panel active" id="tab-active">
       <div class="kanban-header">
         <h2>Active Projects</h2>
-        <span class="kanban-meta" id="active-meta">Loading…</span>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span class="kanban-meta" id="active-meta">Loading…</span>
+          <button class="add-project-toggle-btn" id="add-panel-btn" onclick="toggleAddPanel()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
+            Add Project
+          </button>
+        </div>
       </div>
-      <div class="kanban-board" id="kanban-board">
-        <div class="loading"><div class="spinner"></div>Loading projects…</div>
+      <div class="kanban-with-panel" id="kanban-with-panel">
+        <div class="kanban-board" id="kanban-board">
+          <div class="loading"><div class="spinner"></div>Loading projects…</div>
+        </div>
+        <div class="add-panel" id="add-panel">
+          <div class="add-panel-header">
+            <span class="add-panel-title">New Active Project</span>
+            <button class="add-panel-close" onclick="toggleAddPanel()">✕</button>
+          </div>
+          <div class="add-panel-body">
+            <div class="form-group">
+              <label for="add-name">Project Name</label>
+              <input type="text" id="add-name" placeholder="Name…" autocomplete="off" oninput="autoSuggestCategory(this.value)">
+              <div id="cat-suggest" style="margin-top:6px; display:none;"></div>
+            </div>
+            <div class="form-group">
+              <label for="add-status">Status</label>
+              <select id="add-status">
+                <option value="">Select status…</option>
+                <option selected>High Priority</option>
+                <option>1st Draft / Editing</option>
+                <option>Mid Priority</option>
+                <option>Low Priority</option>
+                <option>Waiting on Information</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="add-category">Category</label>
+              <select id="add-category"><option value="">Select category…</option></select>
+              <div class="custom-cat-row">
+                <input type="text" id="custom-cat-input" placeholder="Add custom category…">
+                <button onclick="addCustomCategory()">Add</button>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="add-major">Major Project</label>
+              <select id="add-major"><option value="">Select major project…</option></select>
+              <div class="custom-cat-row">
+                <input type="text" id="custom-major-input" placeholder="Add custom major project…">
+                <button onclick="addCustomMajorProject()">Add</button>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="add-notes">Notes <span style="color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
+              <textarea id="add-notes" placeholder="Add any notes, links, or context…" rows="3" style="resize:vertical;"></textarea>
+            </div>
+            <div class="form-group">
+              <label for="add-deadline">Deadline <span style="color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
+              <input type="date" id="add-deadline">
+            </div>
+            <button class="btn-primary" id="add-submit-btn" onclick="submitAddProject()">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              Add Project to Sheet
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -1283,6 +1386,16 @@ function setupTabs() {
       if (btn.dataset.tab === 'settings') renderSettingsLists();
     });
   });
+}
+
+function toggleAddPanel() {
+  const panel  = document.getElementById('add-panel');
+  const btn    = document.getElementById('add-panel-btn');
+  const isOpen = panel.classList.toggle('open');
+  btn.classList.toggle('open', isOpen);
+  if (isOpen) {
+    setTimeout(() => document.getElementById('add-name').focus(), 320);
+  }
 }
 
 // ── DATA FETCH ───────────────────────────────────────────────────
@@ -1902,6 +2015,7 @@ async function submitAddProject() {
     document.getElementById('add-notes').value = '';
     document.getElementById('add-deadline').value = '';
     document.getElementById('cat-suggest').style.display = 'none';
+    toggleAddPanel();
     setTimeout(() => fetchActiveProjects(), 2500);
   } catch (e) {
     showToast('Submission failed — check connection', 'error');
