@@ -754,14 +754,16 @@
   .btn-confirm:disabled { opacity: 0.5; cursor: not-allowed; }
 
   /* ── COMPLETED ── */
-  #tab-completed { padding: 24px; }
+  #tab-completed { padding: 0; }
   .section-header {
     display: flex; align-items: center; justify-content: space-between;
     margin-bottom: 18px;
   }
   .section-header h2 { font-size: 15px; font-weight: 600; }
   .filter-row {
-    display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 18px;
+    display: flex; gap: 8px; flex-wrap: nowrap; margin-bottom: 18px;
+    padding: 16px 24px 0;
+    align-items: center;
   }
   .filter-row select {
     background: var(--surface2);
@@ -770,9 +772,10 @@
     color: var(--text);
     font-family: 'DM Sans', sans-serif;
     font-size: 13px;
-    padding: 8px 12px;
+    padding: 8px 10px;
     cursor: pointer;
-    min-width: 160px;
+    flex: 1;
+    min-width: 0;
   }
   .filter-row select:focus { outline: none; border-color: var(--accent); }
   .btn-csv {
@@ -1134,9 +1137,11 @@
           Export CSV
         </button>
       </div>
-      <div class="table-wrap">
-        <div id="completed-table-wrap">
-          <div class="loading"><div class="spinner"></div>Loading…</div>
+      <div style="padding: 0 24px 24px;">
+        <div class="table-wrap">
+          <div id="completed-table-wrap">
+            <div class="loading"><div class="spinner"></div>Loading…</div>
+          </div>
         </div>
       </div>
     </div>
