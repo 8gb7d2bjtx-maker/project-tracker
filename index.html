@@ -1129,6 +1129,7 @@
     <!-- COMPLETED -->
     <div class="tab-panel" id="tab-completed">
       <div class="filter-row" id="filter-row">
+        <select id="filter-year" onchange="onYearChange()"><option value="current">Current Year</option></select>
         <select id="filter-month" onchange="renderCompletedTable()"><option value="">All Months</option></select>
         <select id="filter-category" onchange="renderCompletedTable()"><option value="">All Categories</option></select>
         <select id="filter-major" onchange="renderCompletedTable()"><option value="">All Major Projects</option></select>
@@ -1148,7 +1149,13 @@
 
     <!-- SUMMARY -->
     <div class="tab-panel" id="tab-summary">
-      <div class="charts-grid" id="charts-grid" style="padding:24px;">
+      <div style="padding: 16px 24px 0; display:flex; align-items:center; gap:10px;">
+        <label style="font-size:12px;font-weight:500;color:var(--text2);text-transform:uppercase;letter-spacing:0.03em;">Year</label>
+        <select id="summary-year" onchange="onSummaryYearChange()" style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-family:'DM Sans',sans-serif;font-size:13px;padding:6px 10px;cursor:pointer;outline:none;">
+          <option value="current">Current Year</option>
+        </select>
+      </div>
+      <div class="charts-grid" id="charts-grid" style="padding:16px 24px 24px;">
         <div class="loading"><div class="spinner"></div>Loading data…</div>
       </div>
     </div>
@@ -1181,6 +1188,25 @@
             <button onclick="settingsAddMajor()">Add</button>
           </div>
           <div class="settings-list" id="settings-major-list"></div>
+        </div>
+
+        <!-- Archive -->
+        <div class="settings-card">
+          <h2 class="settings-card-title">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>
+            Archive Year
+          </h2>
+          <p style="font-size:12px;color:var(--text2);margin-bottom:16px;line-height:1.6;">
+            At the end of each school year (June), archive completed projects to a new tab. This clears the Completed tab for the new year while preserving all historical data.
+          </p>
+          <div class="form-group" style="margin-bottom:14px;">
+            <label for="archive-year-input">School Year Label</label>
+            <input type="text" id="archive-year-input" placeholder="e.g. 2025-2026" style="width:100%;">
+          </div>
+          <button onclick="archiveYear()" style="background:var(--red);border:none;color:#fff;border-radius:var(--radius);padding:9px 16px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;width:100%;transition:background 0.18s ease;" onmouseover="this.style.background='#c0392b'" onmouseout="this.style.background='var(--red)'">
+            Archive &amp; Reset Completed Projects
+          </button>
+          <div id="archive-status" style="font-size:12px;margin-top:10px;font-family:'DM Mono',monospace;min-height:18px;"></div>
         </div>
 
       </div>
@@ -1245,7 +1271,7 @@
 <script>
 // ── CONFIG ──────────────────────────────────────────────────────
 const SHEET_ID = '1X0h3QfumXPgfnSB6FzoT7ZsAgjulSWAe1efDRdYkCN0';
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbySVX-hbaQcoDJApSg0RUfyDOrOM9qtbVIKuSTWj6KKBfzsW90ytRjQ92HiU9RHrTJY/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwZ5sN8Ero6XKO-JSF1AAzaU0nraP0cXSn2nIdd8An8ZfAaAHfHvRgldkJGBCzIM-PdHA/exec';
 const FORM1_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSevCkOpfjUPWGcPQWnt6_s5DzpxzprLYkATiRkpRkscQdKoDg/formResponse';
 const FORM2_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSfHifjPEa-deGDssRYE8ATSs7ESyAwmMHz0Hwc3x4iq8HGI8g/formResponse';
 const FORM3_URL = 'https://docs.google.com/forms/d/e/1FAIpQLScvZfqA1Keik3QtAZDM_uIlARxwFCUUsmLLjNMRwPE9-xCq-A/formResponse';
@@ -1261,12 +1287,17 @@ const BASE_CATEGORIES = ['Advertising','Apparel & Merchandise','Certificates & A
 const MONTHS = [];
 const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
-// Generate months July 2025 – December 2026
-for (let y = 2025; y <= 2026; y++) {
+// Generate months July 2025 – June 2027 (covers two school years)
+for (let y = 2025; y <= 2027; y++) {
   const start = (y === 2025) ? 6 : 0;
-  const end   = (y === 2026) ? 11 : 11;
+  const end   = (y === 2027) ? 5 : 11;
   for (let m = start; m <= end; m++) MONTHS.push(`${MONTH_NAMES[m]} ${y}`);
 }
+
+let archiveTabs = [];       // list of archive tab names e.g. ["Completed 2025-2026"]
+let currentViewYear = 'current';   // which year the Completed tab is showing
+let currentSummaryYear = 'current'; // which year the Summary tab is showing
+let currentViewYear = 'current'; // 'current' or a tab name like 'Completed 2025-2026'
 
 // Keyword → category suggestions
 const CAT_KEYWORDS = {
@@ -1393,6 +1424,7 @@ async function fetchAllData() {
     fetchNotes(),
     fetchDeadlines(),
     fetchCompletedProjects(),
+    fetchArchiveTabs(),
   ]);
   updateCountsAndMeta();
   renderKanban();
@@ -1528,14 +1560,18 @@ async function fetchActiveProjects() {
   renderKanban();
 }
 
-async function fetchCompletedProjects() {
+async function fetchCompletedProjects(tabName = 'Completed Projects') {
   try {
-    const rows = await fetchSheetTab('Completed Projects');
-    // Google Forms prepends Timestamp (col 0):
-    // col0=Timestamp, col1=Project Name, col2=Category, col3=Month/Year Completed, col4=Major Project
+    let rows;
+    if (tabName === 'Completed Projects') {
+      rows = await fetchSheetTab('Completed Projects');
+    } else {
+      // Archive tab — fetch by name using CSV export with discovered GID
+      rows = await fetchSheetTabByName(tabName);
+    }
     const dataRows = rows.filter((r, i) => {
       if (i === 0 && r[0] && (r[0].toLowerCase() === 'timestamp' || r[0].toLowerCase() === 'project name')) return false;
-      return r[1] && r[1].trim() !== ''; // col1 = Project Name
+      return r[1] && r[1].trim() !== '';
     });
     completedProjects = dataRows.map(r => ({
       name: r[1] || '',
@@ -1549,6 +1585,80 @@ async function fetchCompletedProjects() {
     renderSummary();
   } catch (e) {
     console.error('Error fetching completed projects:', e);
+  }
+}
+
+async function fetchArchiveTabs() {
+  try {
+    const url = `${APPS_SCRIPT_URL}?action=getArchiveTabs`;
+    const res = await fetch(url);
+    const data = await res.json();
+    if (data.tabs) {
+      archiveTabs = data.tabs;
+      populateYearSelectors();
+    }
+  } catch (e) {
+    console.error('Error fetching archive tabs:', e);
+  }
+}
+
+async function fetchSheetTabByName(tabName) {
+  // For archive tabs we don't have GIDs pre-stored, so we use the CSV export
+  // with the sheet name encoded — Google redirects to correct GID automatically
+  const encoded = encodeURIComponent(tabName);
+  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&sheet=${encoded}`;
+  const res = await fetch(url, { redirect: 'follow' });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const text = await res.text();
+  if (text.trim().startsWith('<!')) throw new Error('Got HTML — check sheet permissions');
+  return parseCSV(text);
+}
+
+function populateYearSelectors() {
+  // Completed tab year selector
+  const fy = document.getElementById('filter-year');
+  const fyVal = fy.value;
+  fy.innerHTML = '<option value="current">Current Year</option>';
+  archiveTabs.forEach(tab => {
+    const label = tab.replace('Completed ', '');
+    fy.add(new Option(label, tab));
+  });
+  if (fyVal && [...fy.options].some(o => o.value === fyVal)) fy.value = fyVal;
+
+  // Summary tab year selector
+  const sy = document.getElementById('summary-year');
+  const syVal = sy.value;
+  sy.innerHTML = '<option value="current">Current Year</option>';
+  archiveTabs.forEach(tab => {
+    const label = tab.replace('Completed ', '');
+    sy.add(new Option(label, tab));
+  });
+  if (syVal && [...sy.options].some(o => o.value === syVal)) sy.value = syVal;
+}
+
+async function onYearChange() {
+  const val = document.getElementById('filter-year').value;
+  currentViewYear = val;
+  // Reset month filter since months may differ across years
+  document.getElementById('filter-month').value = '';
+  document.getElementById('filter-category').value = '';
+  document.getElementById('filter-major').value = '';
+  document.getElementById('completed-table-wrap').innerHTML = '<div class="loading"><div class="spinner"></div>Loading…</div>';
+  if (val === 'current') {
+    await fetchCompletedProjects('Completed Projects');
+  } else {
+    await fetchCompletedProjects(val);
+  }
+}
+
+async function onSummaryYearChange() {
+  const val = document.getElementById('summary-year').value;
+  currentSummaryYear = val;
+  document.getElementById('charts-grid').innerHTML = '<div class="loading"><div class="spinner"></div>Loading…</div>';
+  if (val === 'current') {
+    await fetchCompletedProjects('Completed Projects');
+  } else {
+    await fetchCompletedProjects(val);
   }
 }
 
@@ -2207,6 +2317,54 @@ async function saveMajorProjects() {
     await fetch(url, { mode: 'no-cors' });
   } catch(e) {
     showToast('Could not save major projects — try again', 'error');
+  }
+}
+
+async function archiveYear() {
+  const yearLabel = document.getElementById('archive-year-input').value.trim();
+  const statusEl  = document.getElementById('archive-status');
+
+  if (!yearLabel.match(/^\d{4}-\d{4}$/)) {
+    statusEl.textContent = 'Please enter a valid year label (e.g. 2025-2026)';
+    statusEl.style.color = 'var(--red)';
+    return;
+  }
+
+  const confirmed = confirm(
+    `Archive completed projects as "${yearLabel}"?\n\n` +
+    `This will:\n` +
+    `• Copy all rows from Completed Projects to a new tab called "Completed ${yearLabel}"\n` +
+    `• Clear the Completed Projects tab for the new school year\n\n` +
+    `This cannot be undone. Are you sure?`
+  );
+  if (!confirmed) return;
+
+  statusEl.textContent = 'Archiving…';
+  statusEl.style.color = 'var(--text3)';
+
+  try {
+    const url = `${APPS_SCRIPT_URL}?action=archiveYear&year=${encodeURIComponent(yearLabel)}`;
+    const res  = await fetch(url);
+    const data = await res.json();
+
+    if (data.error) {
+      statusEl.textContent = `Error: ${data.error}`;
+      statusEl.style.color = 'var(--red)';
+      return;
+    }
+
+    statusEl.textContent = `✓ Archived as "Completed ${yearLabel}"`;
+    statusEl.style.color = 'var(--green)';
+    document.getElementById('archive-year-input').value = '';
+
+    // Refresh archive tab list and reset completed view to current year
+    currentViewYear = 'current';
+    currentSummaryYear = 'current';
+    await Promise.all([fetchArchiveTabs(), fetchCompletedProjects('Completed Projects')]);
+    showToast(`Archived as "Completed ${yearLabel}"`, 'success');
+  } catch(e) {
+    statusEl.textContent = 'Archive failed — check connection';
+    statusEl.style.color = 'var(--red)';
   }
 }
 
