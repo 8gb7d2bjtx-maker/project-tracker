@@ -1377,6 +1377,7 @@ function addCustomCategory() {
   document.getElementById('add-category').value = val;
   input.value = '';
   saveCategories();
+  renderSettingsLists();
   showToast('Custom category added: ' + val, 'success');
 }
 
@@ -1390,6 +1391,7 @@ function addCustomMajorProject() {
   document.getElementById('add-major').value = val;
   input.value = '';
   saveMajorProjects();
+  renderSettingsLists();
   showToast('Custom major project added: ' + val, 'success');
 }
 
