@@ -1271,7 +1271,7 @@
 <script>
 // ── CONFIG ──────────────────────────────────────────────────────
 const SHEET_ID = '1X0h3QfumXPgfnSB6FzoT7ZsAgjulSWAe1efDRdYkCN0';
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwZ5sN8Ero6XKO-JSF1AAzaU0nraP0cXSn2nIdd8An8ZfAaAHfHvRgldkJGBCzIM-PdHA/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwoTsxjfK72d3USaokm4jYx0ypiroSv-0cN98oIoO8zZMLH4cD6dZe9oUb4V1QDzTRoUw/exec';
 const FORM1_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSevCkOpfjUPWGcPQWnt6_s5DzpxzprLYkATiRkpRkscQdKoDg/formResponse';
 const FORM2_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSfHifjPEa-deGDssRYE8ATSs7ESyAwmMHz0Hwc3x4iq8HGI8g/formResponse';
 const FORM3_URL = 'https://docs.google.com/forms/d/e/1FAIpQLScvZfqA1Keik3QtAZDM_uIlARxwFCUUsmLLjNMRwPE9-xCq-A/formResponse';
@@ -1324,8 +1324,7 @@ let currentModalProject = null;
 
 // ── INIT ─────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
-  loadPersistedCategories();
-  await fetchMajorProjects(); // must load before populating selects
+  await Promise.all([fetchCategories(), fetchMajorProjects()]); // must load before populating selects
   populateSelects();
   populateModalSelects();
   fetchAllData();
@@ -1377,6 +1376,7 @@ function addCustomCategory() {
   populateCategorySelect('modal-category');
   document.getElementById('add-category').value = val;
   input.value = '';
+  saveCategories();
   showToast('Custom category added: ' + val, 'success');
 }
 
@@ -1446,6 +1446,7 @@ const TAB_GIDS = {
   'Notes': '2136714643',
   'Major Projects': '1890335885',
   'Deadline': '1776726907',
+  'Categories': '1165421335',
 };
 
 let notesMap = {};     // projectName → most recent note text
@@ -2290,7 +2291,6 @@ document.getElementById('complete-modal').addEventListener('click', function(e) 
 });
 
 // ── SETTINGS ─────────────────────────────────────────────────────
-const LS_CATS  = 'risd_custom_categories';
 const LS_FOCUS = 'risd_focused_cards';
 let focusedCards = new Set(JSON.parse(localStorage.getItem(LS_FOCUS) || '[]'));
 
@@ -2298,13 +2298,23 @@ function saveFocusedCards() {
   localStorage.setItem(LS_FOCUS, JSON.stringify([...focusedCards]));
 }
 
-function loadPersistedCategories() {
-  const savedCats = localStorage.getItem(LS_CATS);
-  if (savedCats) categories = JSON.parse(savedCats);
+async function fetchCategories() {
+  try {
+    const rows = await fetchSheetTab('Categories');
+    const vals = rows.map(r => (r[0] || '').trim()).filter(v => v !== '');
+    if (vals.length > 0) categories = vals;
+  } catch(e) {
+    console.error('Could not load categories from sheet, using defaults:', e);
+  }
 }
 
-function saveCategories() {
-  localStorage.setItem(LS_CATS, JSON.stringify(categories));
+async function saveCategories() {
+  const url = `${APPS_SCRIPT_URL}?action=saveCategories&categories=${encodeURIComponent(JSON.stringify(categories))}`;
+  try {
+    await fetch(url, { mode: 'no-cors' });
+  } catch(e) {
+    showToast('Could not save categories — try again', 'error');
+  }
 }
 
 async function fetchMajorProjects() {
