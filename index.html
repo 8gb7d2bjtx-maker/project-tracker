@@ -1344,11 +1344,9 @@
 <script>
 // ── CONFIG ──────────────────────────────────────────────────────
 const SHEET_ID = '1X0h3QfumXPgfnSB6FzoT7ZsAgjulSWAe1efDRdYkCN0';
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwaof0hFA5RWgeKSNlKzwZBgkT8zC1V-vbR3BBFVYLwlTxopcQJE4nI1vUE2IrbwxOTxQ/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxS1nKLEZkwdXdTEReFlu4kHEEKsoLo8T5R1XBAYPn4zwERdx5b9YugQtieUtmX7JCxug/exec';
 const FORM1_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSevCkOpfjUPWGcPQWnt6_s5DzpxzprLYkATiRkpRkscQdKoDg/formResponse';
-const FORM2_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSfHifjPEa-deGDssRYE8ATSs7ESyAwmMHz0Hwc3x4iq8HGI8g/formResponse';
 const F1 = { name:'entry.1936166445', status:'entry.958776253', category:'entry.748617586', major:'entry.193485853' };
-const F2 = { name:'entry.1936166445', category:'entry.748617586', month:'entry.193485853', major:'entry.1295486583' };
 
 const STATUSES = ['High Priority','1st Draft / Editing','Mid Priority','Low Priority','Waiting on Information'];
 let majorProjects = ['Standalone','Bond','Enrollment','Magnet','Center Stage','Dream Big','WWYLS','Legends & Legacies','Teacher of the Year','Dual Language Schools','CTE','Fine Arts','We Read Together','AVID','Financial Aid','TI12','Web Graphics'];
@@ -1393,7 +1391,7 @@ let currentModalProject = null;
 
 // ── INIT ─────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
-  await Promise.all([fetchCategories(), fetchMajorProjects()]); // must load before populating selects
+  await Promise.all([fetchCategories(), fetchMajorProjects(), fetchFocusedCards()]);
   populateSelects();
   populateModalSelects();
   fetchAllData();
@@ -1499,8 +1497,9 @@ async function fetchAllData() {
   ]);
   updateCountsAndMeta();
   renderKanban();
-  // Load archive tabs after core data — non-blocking
+  // Non-blocking background fetches
   fetchArchiveTabs();
+  fetchFocusedCards().then(() => renderKanban());
 }
 
 async function refreshAll(btn) {
@@ -2181,7 +2180,7 @@ function closeModal() {
 
 async function submitComplete() {
   if (!currentModalProject) return;
-  const cat = document.getElementById('modal-category').value;
+  const cat   = document.getElementById('modal-category').value;
   const month = document.getElementById('modal-month').value;
   const major = document.getElementById('modal-major').value;
   if (!cat || !month || !major) { showToast('Please fill all fields', 'error'); return; }
@@ -2190,10 +2189,17 @@ async function submitComplete() {
   btn.disabled = true;
   btn.innerHTML = '<div class="spinner" style="width:14px;height:14px;border-width:2px;"></div> Submitting…';
 
-  const url = `${APPS_SCRIPT_URL}?action=completeProject&name=${encodeURIComponent(currentModalProject.name)}&category=${encodeURIComponent(cat)}&month=${encodeURIComponent(month)}&major=${encodeURIComponent(major)}`;
+  const url = `${APPS_SCRIPT_URL}?action=completeProject` +
+    `&name=${encodeURIComponent(currentModalProject.name)}` +
+    `&category=${encodeURIComponent(cat)}` +
+    `&month=${encodeURIComponent(month)}` +
+    `&major=${encodeURIComponent(major)}`;
 
   try {
-    await fetch(url, { mode: 'no-cors' });
+    const res  = await fetch(url);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+
     showToast(`"${currentModalProject.name}" marked complete!`, 'success');
     focusedCards.delete(currentModalProject.name);
     saveFocusedCards();
@@ -2203,7 +2209,7 @@ async function submitComplete() {
     renderKanban();
     setTimeout(() => fetchAllData(), 2500);
   } catch (e) {
-    showToast('Submission failed — check connection', 'error');
+    showToast(`Could not complete project: ${e.message}`, 'error');
   } finally {
     btn.disabled = false;
     btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Mark Complete';
@@ -2427,11 +2433,28 @@ document.getElementById('complete-modal').addEventListener('click', function(e) 
 });
 
 // ── SETTINGS ─────────────────────────────────────────────────────
-const LS_FOCUS = 'risd_focused_cards';
-let focusedCards = new Set(JSON.parse(localStorage.getItem(LS_FOCUS) || '[]'));
+let focusedCards = new Set();
 
-function saveFocusedCards() {
-  localStorage.setItem(LS_FOCUS, JSON.stringify([...focusedCards]));
+async function fetchFocusedCards() {
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+    const res  = await fetch(`${APPS_SCRIPT_URL}?action=getFocused`, { signal: controller.signal });
+    clearTimeout(timeout);
+    const data = await res.json();
+    if (data.focused) focusedCards = new Set(data.focused);
+  } catch(e) {
+    console.warn('Could not load focused cards:', e.message);
+  }
+}
+
+async function saveFocusedCards() {
+  const url = `${APPS_SCRIPT_URL}?action=saveFocused&focused=${encodeURIComponent(JSON.stringify([...focusedCards]))}`;
+  try {
+    await fetch(url, { mode: 'no-cors' });
+  } catch(e) {
+    console.warn('Could not save focused cards:', e.message);
+  }
 }
 
 async function fetchCategories() {
