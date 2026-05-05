@@ -631,6 +631,44 @@
     line-height: 1;
   }
   .notes-modal-close:hover { color: var(--text); background: var(--surface3); }
+
+  .details-section-toggle {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text2);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 8px 12px;
+    cursor: pointer;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 0;
+    transition: all var(--transition);
+  }
+  .details-section-toggle:hover { background: var(--surface3); color: var(--text); }
+  .details-section-toggle.open { border-radius: var(--radius) var(--radius) 0 0; border-bottom-color: transparent; }
+  .details-section-toggle .toggle-arrow {
+    font-size: 8px;
+    display: inline-block;
+    transition: transform 0.2s ease;
+  }
+  .details-section-toggle.open .toggle-arrow { transform: rotate(90deg); }
+
+  .details-section-body {
+    display: none;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-top: none;
+    border-radius: 0 0 var(--radius) var(--radius);
+    padding: 14px;
+    margin-bottom: 0;
+  }
+  .details-section-body.open { display: block; }
   .notes-modal-pills {
     display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 14px;
   }
@@ -1214,18 +1252,53 @@
   </main>
 </div>
 
-<!-- NOTES MODAL -->
+<!-- PROJECT DETAILS MODAL -->
 <div class="notes-modal-overlay" id="notes-modal">
-  <div class="notes-modal">
+  <div class="notes-modal" style="max-width:480px;">
     <div class="notes-modal-header">
       <div class="notes-modal-title" id="notes-modal-title">—</div>
       <button class="notes-modal-close" onclick="closeNotesModal()">✕</button>
     </div>
-    <div class="notes-modal-pills" id="notes-modal-pills"></div>
-    <div class="form-group" style="margin-bottom:12px;">
+
+    <!-- Collapsible project fields -->
+    <button class="details-section-toggle" id="details-toggle" onclick="toggleDetailsSection()">
+      <span class="toggle-arrow">▶</span>
+      <span class="details-toggle-label">Edit Project Details</span>
+    </button>
+    <div class="details-section-body" id="details-section-body">
+      <div class="form-group" style="margin-bottom:12px;">
+        <label for="details-name">Project Name</label>
+        <input type="text" id="details-name" style="width:100%;">
+      </div>
+      <div class="form-group" style="margin-bottom:12px;">
+        <label for="details-status">Status</label>
+        <select id="details-status" style="width:100%;">
+          <option>High Priority</option>
+          <option>1st Draft / Editing</option>
+          <option>Mid Priority</option>
+          <option>Low Priority</option>
+          <option>Waiting on Information</option>
+        </select>
+      </div>
+      <div class="form-group" style="margin-bottom:12px;">
+        <label for="details-category">Category</label>
+        <select id="details-category" style="width:100%;"></select>
+      </div>
+      <div class="form-group" style="margin-bottom:14px;">
+        <label for="details-major">Major Project</label>
+        <select id="details-major" style="width:100%;"></select>
+      </div>
+      <button class="notes-save-btn" id="details-save-btn" onclick="saveProjectDetails()" style="width:100%;padding:8px;">Save Changes</button>
+      <div class="notes-status" id="details-status-msg" style="margin-top:6px;display:block;"></div>
+    </div>
+
+    <!-- Deadline -->
+    <div class="form-group" style="margin:14px 0 10px;">
       <label for="notes-modal-deadline" style="font-size:11px;">Deadline <span style="color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
       <input type="date" id="notes-modal-deadline" style="width:100%;" onchange="autoSaveDeadline()">
     </div>
+
+    <!-- Notes -->
     <div id="notes-modal-preview" style="display:none;font-size:13px;line-height:1.6;color:var(--text);background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;margin-bottom:10px;white-space:pre-wrap;word-break:break-word;"></div>
     <textarea id="notes-modal-textarea" placeholder="Add notes, links, context…" rows="4"></textarea>
     <div class="notes-save-row">
@@ -1271,15 +1344,11 @@
 <script>
 // ── CONFIG ──────────────────────────────────────────────────────
 const SHEET_ID = '1X0h3QfumXPgfnSB6FzoT7ZsAgjulSWAe1efDRdYkCN0';
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwoTsxjfK72d3USaokm4jYx0ypiroSv-0cN98oIoO8zZMLH4cD6dZe9oUb4V1QDzTRoUw/exec';
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwaof0hFA5RWgeKSNlKzwZBgkT8zC1V-vbR3BBFVYLwlTxopcQJE4nI1vUE2IrbwxOTxQ/exec';
 const FORM1_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSevCkOpfjUPWGcPQWnt6_s5DzpxzprLYkATiRkpRkscQdKoDg/formResponse';
 const FORM2_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSfHifjPEa-deGDssRYE8ATSs7ESyAwmMHz0Hwc3x4iq8HGI8g/formResponse';
-const FORM3_URL = 'https://docs.google.com/forms/d/e/1FAIpQLScvZfqA1Keik3QtAZDM_uIlARxwFCUUsmLLjNMRwPE9-xCq-A/formResponse';
-const FORM4_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSfL-kgjkKWkhnpwG9Xp2dACfY4sKl6Qoj8JQTV4FsTc3CuO3w/formResponse';
 const F1 = { name:'entry.1936166445', status:'entry.958776253', category:'entry.748617586', major:'entry.193485853' };
 const F2 = { name:'entry.1936166445', category:'entry.748617586', month:'entry.193485853', major:'entry.1295486583' };
-const F3 = { name:'entry.1598157101', note:'entry.1545699935' };
-const F4 = { name:'entry.536580912', deadline:'entry.1472388367' };
 
 const STATUSES = ['High Priority','1st Draft / Editing','Mid Priority','Low Priority','Waiting on Information'];
 let majorProjects = ['Standalone','Bond','Enrollment','Magnet','Center Stage','Dream Big','WWYLS','Legends & Legacies','Teacher of the Year','Dual Language Schools','CTE','Fine Arts','We Read Together','AVID','Financial Aid','TI12','Web Graphics'];
@@ -1865,7 +1934,7 @@ function createCard(project) {
   return card;
 }
 
-// ── NOTES MODAL ──────────────────────────────────────────────────
+// ── PROJECT DETAILS MODAL ────────────────────────────────────────
 let currentNotesProject = null;
 let currentNotesBtn = null;
 
@@ -1876,30 +1945,46 @@ function linkify(text) {
   );
 }
 
+function toggleDetailsSection() {
+  const toggle = document.getElementById('details-toggle');
+  const body   = document.getElementById('details-section-body');
+  const isOpen = body.classList.toggle('open');
+  toggle.classList.toggle('open', isOpen);
+}
+
 function openNotesModal(project, btn) {
   currentNotesProject = project;
   currentNotesBtn = btn;
 
-  const showMajor = project.major && project.major.toLowerCase() !== 'standalone';
+  // Header
   document.getElementById('notes-modal-title').textContent = project.name;
 
-  const pillsEl = document.getElementById('notes-modal-pills');
-  pillsEl.innerHTML = [
-    project.category ? `<span class="pill pill-cat">${escHtml(project.category)}</span>` : '',
-    showMajor        ? `<span class="pill pill-maj">${escHtml(project.major)}</span>`     : '',
-  ].join('');
+  // Populate editable fields
+  document.getElementById('details-name').value = project.name;
+  document.getElementById('details-status').value = project.status;
+  populateCategorySelect('details-category');
+  populateMajorSelect('details-major');
+  document.getElementById('details-category').value = project.category || '';
+  document.getElementById('details-major').value = project.major || 'Standalone';
+  document.getElementById('details-status-msg').textContent = '';
+  document.getElementById('details-save-btn').disabled = false;
 
-  const savedNote = notesMap[project.name] || '';
+  // Collapse details by default
+  document.getElementById('details-section-body').classList.remove('open');
+  document.getElementById('details-toggle').classList.remove('open');
+
+  // Deadline
   const savedDeadline = deadlinesMap[project.name] || '';
+  document.getElementById('notes-modal-deadline').value = savedDeadline;
+
+  // Notes
+  const savedNote = notesMap[project.name] || '';
   const textarea  = document.getElementById('notes-modal-textarea');
   const preview   = document.getElementById('notes-modal-preview');
-
-  textarea.value = savedNote;
-  document.getElementById('notes-modal-deadline').value = savedDeadline;
+  textarea.value  = savedNote;
   document.getElementById('notes-modal-status').textContent = '';
   document.getElementById('notes-modal-save-btn').disabled = false;
 
-  // Show linkified preview if note exists, hide if empty
   if (savedNote.trim()) {
     preview.innerHTML = linkify(savedNote);
     preview.style.display = 'block';
@@ -1921,9 +2006,68 @@ function closeNotesModal() {
   currentNotesBtn = null;
 }
 
+async function saveProjectDetails() {
+  if (!currentNotesProject) return;
+  const saveBtn  = document.getElementById('details-save-btn');
+  const statusEl = document.getElementById('details-status-msg');
+  const oldName  = currentNotesProject.name;
+  const newName  = document.getElementById('details-name').value.trim();
+  const status   = document.getElementById('details-status').value;
+  const category = document.getElementById('details-category').value;
+  const major    = document.getElementById('details-major').value;
+
+  if (!newName) { statusEl.textContent = 'Name cannot be empty'; statusEl.style.color = 'var(--red)'; return; }
+
+  saveBtn.disabled = true;
+  statusEl.textContent = 'Saving…';
+  statusEl.style.color = 'var(--text3)';
+
+  const url = `${APPS_SCRIPT_URL}?action=editProject` +
+    `&oldName=${encodeURIComponent(oldName)}` +
+    `&name=${encodeURIComponent(newName)}` +
+    `&status=${encodeURIComponent(status)}` +
+    `&category=${encodeURIComponent(category)}` +
+    `&major=${encodeURIComponent(major)}`;
+
+  try {
+    const res  = await fetch(url);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+
+    // Update local data
+    const proj = activeProjects.find(p => p.name === oldName);
+    if (proj) {
+      // If name changed, update notesMap and deadlinesMap keys
+      if (oldName !== newName) {
+        if (notesMap[oldName] !== undefined)     { notesMap[newName] = notesMap[oldName]; delete notesMap[oldName]; }
+        if (deadlinesMap[oldName] !== undefined) { deadlinesMap[newName] = deadlinesMap[oldName]; delete deadlinesMap[oldName]; }
+        if (focusedCards.has(oldName))           { focusedCards.add(newName); focusedCards.delete(oldName); saveFocusedCards(); }
+        currentNotesProject = { ...proj, name: newName, status, category, major };
+        document.getElementById('notes-modal-title').textContent = newName;
+        document.getElementById('details-name').value = newName;
+      }
+      proj.name = newName;
+      proj.status = status;
+      proj.category = category;
+      proj.major = major;
+    }
+
+    renderKanban();
+    updateCountsAndMeta();
+    statusEl.textContent = 'Saved ✓';
+    statusEl.style.color = 'var(--green)';
+    setTimeout(() => { statusEl.textContent = ''; }, 2000);
+  } catch(err) {
+    statusEl.textContent = `Error: ${err.message}`;
+    statusEl.style.color = 'var(--red)';
+  } finally {
+    saveBtn.disabled = false;
+  }
+}
+
 async function autoSaveDeadline() {
   if (!currentNotesProject) return;
-  const deadline = document.getElementById('notes-modal-deadline').value;
+  const deadline     = document.getElementById('notes-modal-deadline').value;
   const prevDeadline = deadlinesMap[currentNotesProject.name] || '';
   if (deadline === prevDeadline) return;
 
@@ -1931,12 +2075,9 @@ async function autoSaveDeadline() {
   statusEl.textContent = 'Saving…';
   statusEl.style.color = 'var(--text3)';
 
-  const dlBody = new URLSearchParams();
-  dlBody.append(F4.name, currentNotesProject.name);
-  dlBody.append(F4.deadline, deadline);
-
   try {
-    await fetch(FORM4_URL, { method: 'POST', mode: 'no-cors', body: dlBody });
+    const url = `${APPS_SCRIPT_URL}?action=setDeadline&name=${encodeURIComponent(currentNotesProject.name)}&deadline=${encodeURIComponent(deadline)}`;
+    await fetch(url, { mode: 'no-cors' });
     deadlinesMap[currentNotesProject.name] = deadline;
 
     // Update deadline on card immediately
@@ -1973,7 +2114,7 @@ async function saveNoteFromModal() {
   const saveBtn   = document.getElementById('notes-modal-save-btn');
   const statusEl  = document.getElementById('notes-modal-status');
 
-  // If we're in preview mode, switch to edit mode instead of saving
+  // Switch from preview to edit mode
   if (saveBtn.textContent === 'Edit note') {
     preview.style.display = 'none';
     textarea.style.display = 'block';
@@ -1982,17 +2123,14 @@ async function saveNoteFromModal() {
     return;
   }
 
-  const val      = textarea.value.trim();
+  const val = textarea.value.trim();
   saveBtn.disabled = true;
   statusEl.textContent = 'Saving…';
   statusEl.style.color = 'var(--text3)';
 
-  const formBody = new URLSearchParams();
-  formBody.append(F3.name, currentNotesProject.name);
-  formBody.append(F3.note, val);
-
   try {
-    await fetch(FORM3_URL, { method: 'POST', mode: 'no-cors', body: formBody });
+    const url = `${APPS_SCRIPT_URL}?action=addNote&name=${encodeURIComponent(currentNotesProject.name)}&note=${encodeURIComponent(val)}`;
+    await fetch(url, { mode: 'no-cors' });
     notesMap[currentNotesProject.name] = val;
 
     if (currentNotesBtn) {
@@ -2018,7 +2156,7 @@ async function saveNoteFromModal() {
   }
 }
 
-// Close notes modal on overlay click
+// Close on overlay click
 document.getElementById('notes-modal').addEventListener('click', function(e) {
   if (e.target === this) closeNotesModal();
 });
@@ -2096,19 +2234,15 @@ async function submitAddProject() {
 
     // Submit note if entered
     if (note) {
-      const noteBody = new URLSearchParams();
-      noteBody.append(F3.name, name);
-      noteBody.append(F3.note, note);
-      await fetch(FORM3_URL, { method: 'POST', mode: 'no-cors', body: noteBody });
+      const noteUrl = `${APPS_SCRIPT_URL}?action=addNote&name=${encodeURIComponent(name)}&note=${encodeURIComponent(note)}`;
+      await fetch(noteUrl, { mode: 'no-cors' });
       notesMap[name] = note;
     }
 
     // Submit deadline if entered
     if (deadline) {
-      const dlBody = new URLSearchParams();
-      dlBody.append(F4.name, name);
-      dlBody.append(F4.deadline, deadline);
-      await fetch(FORM4_URL, { method: 'POST', mode: 'no-cors', body: dlBody });
+      const dlUrl = `${APPS_SCRIPT_URL}?action=setDeadline&name=${encodeURIComponent(name)}&deadline=${encodeURIComponent(deadline)}`;
+      await fetch(dlUrl, { mode: 'no-cors' });
       deadlinesMap[name] = deadline;
     }
 
