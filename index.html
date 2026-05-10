@@ -1533,7 +1533,7 @@
     <div class="app-shell">
         <header>
             <div class="logo">
-                <div class="logo-mark">RT</div>
+                <img id="header-icon" src="" alt="RISD Tracker" style="width:32px;height:32px;border-radius:6px;display:block;flex-shrink:0;">
                 <div>
                     <div class="logo-text">RISD Project Tracker</div>
                     <div class="logo-sub">Graphic Design</div>
@@ -1932,6 +1932,11 @@
 
     // ── INIT ─────────────────────────────────────────────────────────
     document.addEventListener('DOMContentLoaded', async () => {
+        // Set header icon from the embedded apple-touch-icon PNG
+        const touchIcon = document.querySelector('link[rel="apple-touch-icon"]');
+        if (touchIcon)
+            document.getElementById('header-icon').src = touchIcon.href;
+
         await Promise.all([fetchCategories(), fetchMajorProjects(), fetchFocusedCards()]);
         populateSelects();
         populateModalSelects();
