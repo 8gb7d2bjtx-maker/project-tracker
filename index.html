@@ -622,6 +622,10 @@
             display: none;
         }
 
+        .logo-text {
+            display: none;
+        }
+
         header {
             padding: 0 12px;
             gap: 12px;
@@ -1816,6 +1820,10 @@
                 <label for="modal-major">Major Project</label>
                 <select id="modal-major"></select>
             </div>
+            <div class="form-group">
+                <label for="modal-department">Department / Campus</label>
+                <select id="modal-department"></select>
+            </div>
 
             <div class="modal-footer">
                 <button class="btn-cancel" onclick="closeModal()">Cancel</button>
@@ -1837,7 +1845,7 @@
     <script>
     // ── CONFIG ──────────────────────────────────────────────────────
     const SHEET_ID = '1X0h3QfumXPgfnSB6FzoT7ZsAgjulSWAe1efDRdYkCN0';
-    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxNylZuOSX7boCjgccDcIrLbeV8rgZhD3yTwDcYkhzcBG8TEwyMmXp7_dr8rKUSSIOj/exec';
+    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzctzp0VxqyGYZvG25zdFu_EAN4S4DxpVRzjN1GjNoYNg6lD9chL_gjqiTmYWc0FwVdsg/exec';
 
     const STATUSES = ['High Priority', '1st Draft / Editing', 'Mid Priority', 'Low Priority', 'Waiting on Information'];
     let majorProjects = ['Standalone', 'Bond', 'Enrollment', 'Magnet', 'Center Stage', 'Dream Big', 'WWYLS', 'Legends & Legacies', 'Teacher of the Year', 'Dual Language Schools', 'CTE', 'Fine Arts', 'We Read Together', 'AVID', 'Financial Aid', 'TI12', 'Web Graphics'];
@@ -1943,6 +1951,7 @@
         mm.innerHTML = '<option value="">Select month…</option>';
         MONTHS.forEach(m => mm.add(new Option(m, m)));
         populateMajorSelect('modal-major');
+        populateDepartmentSelect('modal-department');
     }
 
     // ── TABS ─────────────────────────────────────────────────────────
@@ -2699,6 +2708,8 @@
             document.getElementById('modal-category').value = project.category;
         if (project.major)
             document.getElementById('modal-major').value = project.major;
+        if (project.department)
+            document.getElementById('modal-department').value = project.department;
         // Default to current month
         const now = new Date();
         const guess = `${MONTH_NAMES[now.getMonth()]} ${now.getFullYear()}`;
@@ -2719,7 +2730,8 @@
         const cat = document.getElementById('modal-category').value;
         const month = document.getElementById('modal-month').value;
         const major = document.getElementById('modal-major').value;
-        if (!cat || !month || !major) {
+        const department = document.getElementById('modal-department').value;
+        if (!cat || !month || !major || !department) {
             showToast('Please fill all fields', 'error');
             return;
         }
@@ -2732,7 +2744,8 @@
         `&name=${encodeURIComponent(currentModalProject.name)}` +
         `&category=${encodeURIComponent(cat)}` +
         `&month=${encodeURIComponent(month)}` +
-        `&major=${encodeURIComponent(major)}`;
+        `&major=${encodeURIComponent(major)}` +
+        `&department=${encodeURIComponent(department)}`;
 
         try {
             const res = await fetch(url);
@@ -3234,6 +3247,7 @@
         if (type === 'dept') {
             saveDepartments();
             populateDepartmentSelect('add-department');
+            populateDepartmentSelect('modal-department');
             populateDepartmentSelect('details-department');
         }
     }
