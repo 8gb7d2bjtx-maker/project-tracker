@@ -110,12 +110,6 @@
         text-transform: uppercase;
     }
 
-    .header-right {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-
     .refresh-icon-btn {
         background: var(--surface2);
         border: 1px solid var(--border);
@@ -228,7 +222,7 @@
     .tab-panel.active {
         display: flex;
         flex-direction: column;
-    }/* ── ADD PROJECT ── *//* ── ADD PROJECT ── */
+    }/* ── ADD PROJECT ── */
 
     .form-card {
         background: var(--surface);
@@ -314,34 +308,6 @@
         color: #fff;
     }
 
-    .custom-cat-row {
-        display: flex;
-        gap: 8px;
-        margin-top: 8px;
-    }
-
-    .custom-cat-row input {
-        flex: 1;
-    }
-
-    .custom-cat-row button {
-        background: var(--accent);
-        border: none;
-        color: #fff;
-        border-radius: var(--radius);
-        padding: 9px 14px;
-        font-family: 'DM Sans', sans-serif;
-        font-size: 13px;
-        font-weight: 500;
-        cursor: pointer;
-        white-space: nowrap;
-        transition: background var(--transition);
-    }
-
-    .custom-cat-row button:hover {
-        background: var(--accent2);
-    }
-
     .btn-primary {
         background: var(--accent);
         border: none;
@@ -413,11 +379,6 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-    }
-
-    .kanban-header h2 {
-        font-size: 15px;
-        font-weight: 600;
     }
 
     .kanban-meta {
@@ -778,13 +739,6 @@
         margin-right: 2px;
     }
 
-    .card-pills {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 4px;
-        margin-bottom: 12px;
-    }
-
     .pill {
         font-size: 10px;
         font-weight: 500;
@@ -914,13 +868,6 @@
 
     .details-section-body.open {
         display: block;
-    }
-
-    .notes-modal-pills {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 4px;
-        margin-bottom: 14px;
     }
 
     .notes-modal textarea {
@@ -1137,18 +1084,6 @@
 
     #tab-completed {
         padding: 0;
-    }
-
-    .section-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 18px;
-    }
-
-    .section-header h2 {
-        font-size: 15px;
-        font-weight: 600;
     }
 
     .filter-row {
@@ -1903,33 +1838,17 @@
     // ── CONFIG ──────────────────────────────────────────────────────
     const SHEET_ID = '1X0h3QfumXPgfnSB6FzoT7ZsAgjulSWAe1efDRdYkCN0';
     const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxNylZuOSX7boCjgccDcIrLbeV8rgZhD3yTwDcYkhzcBG8TEwyMmXp7_dr8rKUSSIOj/exec';
-    const FORM1_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSevCkOpfjUPWGcPQWnt6_s5DzpxzprLYkATiRkpRkscQdKoDg/formResponse';
-    const F1 = {
-        name: 'entry.1936166445',
-        status: 'entry.958776253',
-        category: 'entry.748617586',
-        major: 'entry.193485853'
-    };
 
     const STATUSES = ['High Priority', '1st Draft / Editing', 'Mid Priority', 'Low Priority', 'Waiting on Information'];
     let majorProjects = ['Standalone', 'Bond', 'Enrollment', 'Magnet', 'Center Stage', 'Dream Big', 'WWYLS', 'Legends & Legacies', 'Teacher of the Year', 'Dual Language Schools', 'CTE', 'Fine Arts', 'We Read Together', 'AVID', 'Financial Aid', 'TI12', 'Web Graphics'];
-    const BASE_CATEGORIES = ['Advertising', 'Apparel & Merchandise', 'Certificates & Awards', 'Digital & Web Assets', 'Environmental Graphics', 'Event Graphics', 'Infographics & Data Visualization', 'Logo / Brand Identity', 'Multipage Booklet', 'Photo & Video', 'Print Collateral & Flyers', 'Signage & Banners', 'Slide Decks & Presentations', 'Social Media & Web Graphics', 'Update / Revision', 'Other'];
-    const MONTHS = [];
-    const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    let categories = ['Advertising', 'Apparel & Merchandise', 'Certificates & Awards', 'Digital & Web Assets', 'Environmental Graphics', 'Event Graphics', 'Infographics & Data Visualization', 'Logo / Brand Identity', 'Multipage Booklet', 'Photo & Video', 'Print Collateral & Flyers', 'Signage & Banners', 'Slide Decks & Presentations', 'Social Media & Web Graphics', 'Update / Revision', 'Other'];
+    let departments = [];
+    let activeProjects = [];
+    let completedProjects = [];
+    let archiveTabs = [];
+    let currentModalProject = null;
 
-    // Generate months July 2025 – June 2027 (covers two school years)
-    for (let y = 2025; y <= 2027; y++) {
-        const start = (y === 2025) ? 6 : 0;
-        const end = (y === 2027) ? 5 : 11;
-        for (let m = start; m <= end; m++)
-            MONTHS.push(`${MONTH_NAMES[m]} ${y}`);
-    }
-
-    let archiveTabs = []; // list of archive tab names e.g. ["Completed 2025-2026"]
-    let currentViewYear = 'current'; // which year the Completed tab is showing
-    let currentSummaryYear = 'current'; // which year the Summary tab is showing
-
-    // Keyword → category suggestions
+    // Keyword → category suggestions (used by autoSuggestCategory)
     const CAT_KEYWORDS = {
         'Advertising': ['ad', 'ads', 'campaign', 'billboard', 'newspaper', 'magazine'],
         'Apparel & Merchandise': ['shirt', 'apparel', 'merch', 'merchandise', 'tshirt', 'hoodie', 'hat'],
@@ -1948,11 +1867,16 @@
         'Update / Revision': ['update', 'revision', 'revise', 'edit', 'fix', 'change', 'refresh'],
     };
 
-    let categories = [...BASE_CATEGORIES];
-    let activeProjects = [];
-    let completedProjects = [];
-    let departments = [];
-    let currentModalProject = null;
+    const MONTHS = [];
+    const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+    // Generate months July 2025 – June 2027 (covers two school years)
+    for (let y = 2025; y <= 2027; y++) {
+        const start = (y === 2025) ? 6 : 0;
+        const end = (y === 2027) ? 5 : 11;
+        for (let m = start; m <= end; m++)
+            MONTHS.push(`${MONTH_NAMES[m]} ${y}`);
+    }
 
     // ── INIT ─────────────────────────────────────────────────────────
     document.addEventListener('DOMContentLoaded', async () => {
@@ -2140,43 +2064,6 @@
         return rows.filter(r => r.some(c => c !== ''));
     }
 
-    async function fetchSheetCSV(gid) {
-        const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${gid}`;
-        const res = await fetch(url, {
-            redirect: 'follow'
-        });
-        if (!res.ok)
-            throw new Error(`HTTP ${res.status}`);
-        const text = await res.text();
-        // If we got redirected to a login page, the response will be HTML
-        if (text.trim().startsWith('<!'))
-            throw new Error('Got HTML — sheet may not be public');
-        return parseCSV(text);
-    }
-
-    async function discoverGid(tabName) {
-        // Fetch the sheet HTML page and extract gid from tab links
-        try {
-            const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit`;
-            const res = await fetch(url, {
-                redirect: 'follow'
-            });
-            const text = await res.text();
-            // Look for gid patterns associated with the tab name
-            const escaped = tabName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            const patterns = [
-            new RegExp(`gid=(\\d+)[^>]*>\\s*${escaped}`, 'i'),
-            new RegExp(`${escaped}[^<]*<[^>]+gid=(\\d+)`, 'i'),
-            ];
-            for (const p of patterns) {
-                const m = text.match(p);
-                if (m)
-                    return m[1];
-            }
-        } catch (e) {}
-        return null;
-    }
-
     async function fetchSheetTab(tabName) {
         const gid = TAB_GIDS[tabName];
         if (!gid)
@@ -2191,27 +2078,6 @@
         if (text.trim().startsWith('<!'))
             throw new Error('Got HTML — make sure the sheet is shared as "Anyone with the link can view"');
         return parseCSV(text);
-    }
-
-    async function discoverGid(tabName) {
-        try {
-            const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit`;
-            const res = await fetch(url, {
-                redirect: 'follow'
-            });
-            const text = await res.text();
-            const escaped = tabName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            const patterns = [
-            new RegExp(`gid=(\\d+)[^>]*>\\s*${escaped}`, 'i'),
-            new RegExp(`${escaped}[^<]*<[^>]+gid=(\\d+)`, 'i'),
-            ];
-            for (const p of patterns) {
-                const m = text.match(p);
-                if (m)
-                    return m[1];
-            }
-        } catch (e) {}
-        return null;
     }
 
     async function fetchActiveProjectsData() {
@@ -2313,105 +2179,64 @@
     }
 
     function populateYearSelectors() {
-        // Completed tab year selector
-        const fy = document.getElementById('filter-year');
-        const fyVal = fy.value;
-        fy.innerHTML = '<option value="current">Current Year</option>';
-        archiveTabs.forEach(tab => {
-            const label = tab.replace('Completed ', '');
-            fy.add(new Option(label, tab));
+        ['filter-year', 'summary-year'].forEach(id => {
+            const sel = document.getElementById(id);
+            const prev = sel.value;
+            sel.innerHTML = '<option value="current">Current Year</option>';
+            archiveTabs.forEach(tab => sel.add(new Option(tab.replace('Completed ', ''), tab)));
+            if (prev && [...sel.options].some(o => o.value === prev))
+                sel.value = prev;
         });
-        if (fyVal && [...fy.options].some(o => o.value === fyVal))
-            fy.value = fyVal;
-
-        // Summary tab year selector
-        const sy = document.getElementById('summary-year');
-        const syVal = sy.value;
-        sy.innerHTML = '<option value="current">Current Year</option>';
-        archiveTabs.forEach(tab => {
-            const label = tab.replace('Completed ', '');
-            sy.add(new Option(label, tab));
-        });
-        if (syVal && [...sy.options].some(o => o.value === syVal))
-            sy.value = syVal;
     }
 
     async function onYearChange() {
         const val = document.getElementById('filter-year').value;
-        currentViewYear = val;
-        // Reset month filter since months may differ across years
         document.getElementById('filter-month').value = '';
         document.getElementById('filter-category').value = '';
         document.getElementById('filter-major').value = '';
+        document.getElementById('filter-dept').value = '';
         document.getElementById('completed-table-wrap').innerHTML = '<div class="loading"><div class="spinner"></div>Loading…</div>';
-        if (val === 'current') {
-            await fetchCompletedProjects('Completed Projects');
-        } else {
-            await fetchCompletedProjects(val);
-        }
+        await fetchCompletedProjects(val === 'current' ? 'Completed Projects' : val);
     }
 
     async function onSummaryYearChange() {
         const val = document.getElementById('summary-year').value;
-        currentSummaryYear = val;
         document.getElementById('charts-grid').innerHTML = '<div class="loading"><div class="spinner"></div>Loading…</div>';
-        if (val === 'current') {
-            await fetchCompletedProjects('Completed Projects');
-        } else {
-            await fetchCompletedProjects(val);
-        }
+        await fetchCompletedProjects(val === 'current' ? 'Completed Projects' : val);
     }
 
-    function updateLastSync() {
-        const now = new Date();
-        const h = now.getHours(),
-            m = now.getMinutes();
-        document.getElementById('lastSync').textContent = `Synced ${h}:${String(m).padStart(2, '0')}`;
-    }
-
-    async function fetchNotes() {
+    // Shared helper for timestamp-keyed sheet tabs (Notes, Deadline)
+    // Returns a map of { projectName → mostRecentValue }
+    async function fetchNameValueMap(tabName) {
         try {
-            const rows = await fetchSheetTab('Notes');
-            // col0=Timestamp, col1=Project Name, col2=Notes
-            // Rows are in chronological order — iterate all and keep the last note per project name,
-            // so the most recently saved note always wins.
-            const map = {};
-            rows.forEach((r, i) => {
-                if (i === 0 && r[0] && r[0].toLowerCase() === 'timestamp')
-                    return; // skip header
-                const name = (r[1] || '').trim();
-                const note = (r[2] || '').trim();
-                if (name)
-                    map[name] = note; // later rows overwrite earlier ones
-            });
-            notesMap = map;
-        } catch (e) {
-            console.error('Error fetching notes:', e);
-
-        }
-    }
-    // Don't wipe notesMap on error — keep whatever we had before
-
-    async function fetchDeadlines() {
-        try {
-            const rows = await fetchSheetTab('Deadline');
-            // col0=Timestamp, col1=Project Name, col2=Deadline
+            const rows = await fetchSheetTab(tabName);
             const map = {};
             rows.forEach((r, i) => {
                 if (i === 0 && r[0] && r[0].toLowerCase() === 'timestamp')
                     return;
                 const name = (r[1] || '').trim();
-                const deadline = (r[2] || '').trim();
+                const val = (r[2] || '').trim();
                 if (name)
-                    map[name] = deadline; // later rows overwrite earlier ones
+                    map[name] = val;
             });
-            deadlinesMap = map;
+            return map;
         } catch (e) {
-            console.error('Error fetching deadlines:', e);
-
+            console.error(`Error fetching ${tabName}:`, e);
+            return null; // null = keep existing map
         }
     }
-    // Don't wipe deadlinesMap on error
+
+    async function fetchNotes() {
+        const map = await fetchNameValueMap('Notes');
+        if (map !== null)
+            notesMap = map;
+    }
+
+    async function fetchDeadlines() {
+        const map = await fetchNameValueMap('Deadline');
+        if (map !== null)
+            deadlinesMap = map;
+    }
 
     function formatDeadline(dateStr) {
         // dateStr is yyyy-mm-dd
@@ -2931,6 +2756,17 @@
         }
     }
 
+    function resetAddForm() {
+        document.getElementById('add-name').value = '';
+        document.getElementById('add-status').value = 'High Priority';
+        document.getElementById('add-category').value = '';
+        document.getElementById('add-major').value = 'Standalone';
+        document.getElementById('add-department').value = 'Strategy & Engagement';
+        document.getElementById('add-notes').value = '';
+        document.getElementById('add-deadline').value = '';
+        document.getElementById('cat-suggest').style.display = 'none';
+    }
+
     // ── ADD PROJECT ──────────────────────────────────────────────────
     async function submitAddProject() {
         const name = document.getElementById('add-name').value.trim();
@@ -2976,14 +2812,7 @@
             }
 
             showToast(`"${name}" added successfully!`, 'success');
-            document.getElementById('add-name').value = '';
-            document.getElementById('add-status').value = 'High Priority';
-            document.getElementById('add-category').value = '';
-            document.getElementById('add-major').value = 'Standalone';
-            document.getElementById('add-department').value = 'Strategy & Engagement';
-            document.getElementById('add-notes').value = '';
-            document.getElementById('add-deadline').value = '';
-            document.getElementById('cat-suggest').style.display = 'none';
+            resetAddForm();
             toggleAddPanel();
             setTimeout(() => fetchActiveProjects(), 2500);
         } catch (e) {
@@ -3231,56 +3060,73 @@
         }
     }
 
+    // ── LIST MANAGEMENT (Categories, Major Projects, Departments) ────
+    async function fetchSheetList(tabName, targetRef) {
+        try {
+            const rows = await fetchSheetTab(tabName);
+            const vals = rows.map(r => (r[0] || '').trim()).filter(v => v !== '');
+            if (vals.length > 0)
+                targetRef.arr = vals;
+        } catch (e) {
+            console.error(`Could not load ${tabName} from sheet:`, e);
+        }
+    }
+
+    async function saveSheetList(action, paramName, list) {
+        const url = `${APPS_SCRIPT_URL}?action=${action}&${paramName}=${encodeURIComponent(JSON.stringify(list))}`;
+        try {
+            await fetch(url, {
+                mode: 'no-cors'
+            });
+        } catch (e) {
+            showToast(`Could not save ${paramName} — try again`, 'error');
+        }
+    }
+
+    // Wrapper objects so fetchSheetList can mutate by reference
+    const catRef = {
+        get arr() {
+            return categories;
+        },
+        set arr(v) {
+            categories = v;
+        }
+    };
+    const majorRef = {
+        get arr() {
+            return majorProjects;
+        },
+        set arr(v) {
+            majorProjects = v;
+        }
+    };
+    const deptRef = {
+        get arr() {
+            return departments;
+        },
+        set arr(v) {
+            departments = v;
+        }
+    };
+
     async function fetchCategories() {
-        try {
-            const rows = await fetchSheetTab('Categories');
-            const vals = rows.map(r => (r[0] || '').trim()).filter(v => v !== '');
-            if (vals.length > 0)
-                categories = vals;
-        } catch (e) {
-            console.error('Could not load categories from sheet, using defaults:', e);
-        }
+        await fetchSheetList('Categories', catRef);
     }
-
-    async function saveCategories() {
-        const url = `${APPS_SCRIPT_URL}?action=saveCategories&categories=${encodeURIComponent(JSON.stringify(categories))}`;
-        try {
-            await fetch(url, {
-                mode: 'no-cors'
-            });
-        } catch (e) {
-            showToast('Could not save categories — try again', 'error');
-        }
-    }
-
     async function fetchMajorProjects() {
-        try {
-            const rows = await fetchSheetTab('Major Projects');
-            const vals = rows.map(r => (r[0] || '').trim()).filter(v => v !== '');
-            if (vals.length > 0)
-                majorProjects = vals;
-        } catch (e) {
-            console.error('Could not load major projects from sheet, using defaults:', e);
-        }
+        await fetchSheetList('Major Projects', majorRef);
     }
-
+    async function saveCategories() {
+        await saveSheetList('saveCategories', 'categories', categories);
+    }
     async function saveMajorProjects() {
-        const url = `${APPS_SCRIPT_URL}?action=saveMajors&majors=${encodeURIComponent(JSON.stringify(majorProjects))}`;
-        try {
-            await fetch(url, {
-                mode: 'no-cors'
-            });
-        } catch (e) {
-            showToast('Could not save major projects — try again', 'error');
-        }
+        await saveSheetList('saveMajors', 'majors', majorProjects);
     }
 
     async function fetchDepartments() {
         try {
             const controller = new AbortController();
             const timeout = setTimeout(() => controller.abort(), 8000);
-            const url = `${APPS_SCRIPT_URL}?action=getDepartments`;
-            const res = await fetch(url, {
+            const res = await fetch(`${APPS_SCRIPT_URL}?action=getDepartments`, {
                 signal: controller.signal
             });
             clearTimeout(timeout);
@@ -3293,14 +3139,7 @@
     }
 
     async function saveDepartments() {
-        const url = `${APPS_SCRIPT_URL}?action=saveDepartments&departments=${encodeURIComponent(JSON.stringify(departments))}`;
-        try {
-            await fetch(url, {
-                mode: 'no-cors'
-            });
-        } catch (e) {
-            showToast('Could not save departments — try again', 'error');
-        }
+        await saveSheetList('saveDepartments', 'departments', departments);
     }
 
     async function archiveYear() {
@@ -3340,10 +3179,6 @@
             statusEl.textContent = `✓ Archived as "Completed ${yearLabel}"`;
             statusEl.style.color = 'var(--green)';
             document.getElementById('archive-year-input').value = '';
-
-            // Refresh archive tab list and reset completed view to current year
-            currentViewYear = 'current';
-            currentSummaryYear = 'current';
             await Promise.all([fetchArchiveTabs(), fetchCompletedProjects('Completed Projects')]);
             showToast(`Archived as "Completed ${yearLabel}"`, 'success');
         } catch (e) {
@@ -3444,52 +3279,31 @@
         showToast(`"${name}" removed`, 'success');
     }
 
+    function settingsAddItem(type, inputId) {
+        const input = document.getElementById(inputId);
+        const val = input.value.trim();
+        const list = getList(type);
+        if (!val)
+            return;
+        if (list.includes(val)) {
+            showToast('Already exists', 'error');
+            return;
+        }
+        list.push(val);
+        saveList(type);
+        input.value = '';
+        renderSettingsLists();
+        showToast('Added successfully', 'success');
+    }
+
     function settingsAddCategory() {
-        const input = document.getElementById('new-cat-input');
-        const val = input.value.trim();
-        if (!val || categories.includes(val)) {
-            if (!val)
-                return;
-            showToast('Already exists', 'error');
-            return;
-        }
-        categories.push(val);
-        saveList('cat');
-        input.value = '';
-        renderSettingsLists();
-        showToast('Category added', 'success');
+        settingsAddItem('cat', 'new-cat-input');
     }
-
     function settingsAddMajor() {
-        const input = document.getElementById('new-major-input');
-        const val = input.value.trim();
-        if (!val || majorProjects.includes(val)) {
-            if (!val)
-                return;
-            showToast('Already exists', 'error');
-            return;
-        }
-        majorProjects.push(val);
-        saveList('major');
-        input.value = '';
-        renderSettingsLists();
-        showToast('Major project added', 'success');
+        settingsAddItem('major', 'new-major-input');
     }
-
     function settingsAddDepartment() {
-        const input = document.getElementById('new-dept-input');
-        const val = input.value.trim();
-        if (!val || departments.includes(val)) {
-            if (!val)
-                return;
-            showToast('Already exists', 'error');
-            return;
-        }
-        departments.push(val);
-        saveList('dept');
-        input.value = '';
-        renderSettingsLists();
-        showToast('Department added', 'success');
+        settingsAddItem('dept', 'new-dept-input');
     }
 
     // Allow Enter key in Settings add inputs
