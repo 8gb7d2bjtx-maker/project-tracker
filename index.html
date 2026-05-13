@@ -1628,6 +1628,12 @@
                                 </div>
                             </div>
                             <div class="form-group">
+                                <label for="add-department">Department / Campus</label>
+                                <select id="add-department">
+                                    <option value="">Select department…</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
                                 <label for="add-notes">
                                     Notes 
                                     <span style="color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">(optional)</span>
@@ -1750,6 +1756,24 @@
                         <div class="settings-list" id="settings-major-list"></div>
                     </div>
 
+                    <!-- Departments -->
+                    <div class="settings-card">
+                        <h2 class="settings-card-title">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                                <polyline points="9 22 9 12 15 12 15 22"/>
+                            </svg>
+
+                                        Departments / Campuses
+                                      
+                        </h2>
+                        <div class="settings-add-row">
+                            <input type="text" id="new-dept-input" placeholder="New department…">
+                            <button onclick="settingsAddDepartment()">Add</button>
+                        </div>
+                        <div class="settings-list" id="settings-dept-list"></div>
+                    </div>
+
                     <!-- Archive -->
                     <div class="settings-card">
                         <h2 class="settings-card-title">
@@ -1816,6 +1840,10 @@
                     <label for="details-major">Major Project</label>
                     <select id="details-major" style="width:100%;"></select>
                 </div>
+                <div class="form-group" style="margin-bottom:14px;">
+                    <label for="details-department">Department / Campus</label>
+                    <select id="details-department" style="width:100%;"></select>
+                </div>
                 <button class="notes-save-btn" id="details-save-btn" onclick="saveProjectDetails()" style="width:100%;padding:8px;">Save Changes</button>
                 <div class="notes-status" id="details-status-msg" style="margin-top:6px;display:block;"></div>
             </div>
@@ -1879,7 +1907,7 @@
     <script>
     // ── CONFIG ──────────────────────────────────────────────────────
     const SHEET_ID = '1X0h3QfumXPgfnSB6FzoT7ZsAgjulSWAe1efDRdYkCN0';
-    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxS1nKLEZkwdXdTEReFlu4kHEEKsoLo8T5R1XBAYPn4zwERdx5b9YugQtieUtmX7JCxug/exec';
+    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxNylZuOSX7boCjgccDcIrLbeV8rgZhD3yTwDcYkhzcBG8TEwyMmXp7_dr8rKUSSIOj/exec';
     const FORM1_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSevCkOpfjUPWGcPQWnt6_s5DzpxzprLYkATiRkpRkscQdKoDg/formResponse';
     const F1 = {
         name: 'entry.1936166445',
@@ -1928,6 +1956,7 @@
     let categories = [...BASE_CATEGORIES];
     let activeProjects = [];
     let completedProjects = [];
+    let departments = [];
     let currentModalProject = null;
 
     // ── INIT ─────────────────────────────────────────────────────────
@@ -1937,7 +1966,7 @@
         if (touchIcon)
             document.getElementById('header-icon').src = touchIcon.href;
 
-        await Promise.all([fetchCategories(), fetchMajorProjects(), fetchFocusedCards()]);
+        await Promise.all([fetchCategories(), fetchMajorProjects(), fetchFocusedCards(), fetchDepartments()]);
         populateSelects();
         populateModalSelects();
         fetchAllData();
@@ -1948,6 +1977,7 @@
     function populateSelects() {
         populateCategorySelect('add-category');
         populateMajorSelect('add-major');
+        populateDepartmentSelect('add-department');
         MONTHS.forEach(m => {
             document.getElementById('filter-month').add(new Option(m, m));
         });
@@ -1974,6 +2004,20 @@
         });
     }
 
+    function populateDepartmentSelect(id) {
+        const el = document.getElementById(id);
+        if (!el)
+            return;
+        const current = el.value;
+        el.innerHTML = '<option value="">Select department…</option>';
+        departments.forEach(d => {
+            const opt = new Option(d, d);
+            if (current ? d === current : d === 'Strategy & Engagement')
+                opt.selected = true;
+            el.add(opt);
+        });
+    }
+
     function populateModalSelects() {
         populateCategorySelect('modal-category');
         const mm = document.getElementById('modal-month');
@@ -1988,11 +2032,9 @@
         if (!val || categories.includes(val))
             return;
         categories.push(val);
-        populateCategorySelect('add-category');
-        populateCategorySelect('modal-category');
+        saveList('cat');
         document.getElementById('add-category').value = val;
         input.value = '';
-        saveCategories();
         renderSettingsLists();
         showToast('Custom category added: ' + val, 'success');
     }
@@ -2003,11 +2045,9 @@
         if (!val || majorProjects.includes(val))
             return;
         majorProjects.push(val);
-        populateMajorSelect('add-major');
-        populateMajorSelect('modal-major');
+        saveList('major');
         document.getElementById('add-major').value = val;
         input.value = '';
-        saveMajorProjects();
         renderSettingsLists();
         showToast('Custom major project added: ' + val, 'success');
     }
@@ -2072,6 +2112,7 @@
         'Major Projects': '1890335885',
         'Deadline': '1776726907',
         'Categories': '1165421335',
+        'Departments': '1623589589',
     };
 
     let notesMap = {}; // projectName → most recent note text
@@ -2217,6 +2258,7 @@
                 status: r[2] || 'Mid Priority',
                 category: r[3] || '',
                 major: r[4] || '',
+                department: r[5] || '',
             }));
         } catch (e) {
             console.error('Error fetching active projects:', e);
@@ -2254,6 +2296,7 @@
                 category: r[2] || '',
                 month: r[3] || '',
                 major: r[4] || '',
+                department: r[5] || '',
             }));
             document.getElementById('count-completed').textContent = completedProjects.length;
             populateCompletedFilters();
@@ -2615,8 +2658,10 @@
         document.getElementById('details-status').value = project.status;
         populateCategorySelect('details-category');
         populateMajorSelect('details-major');
+        populateDepartmentSelect('details-department');
         document.getElementById('details-category').value = project.category || '';
         document.getElementById('details-major').value = project.major || 'Standalone';
+        document.getElementById('details-department').value = project.department || 'Strategy & Engagement';
         document.getElementById('details-status-msg').textContent = '';
         document.getElementById('details-save-btn').disabled = false;
 
@@ -2668,6 +2713,7 @@
         const status = document.getElementById('details-status').value;
         const category = document.getElementById('details-category').value;
         const major = document.getElementById('details-major').value;
+        const department = document.getElementById('details-department').value;
 
         if (!newName) {
             statusEl.textContent = 'Name cannot be empty';
@@ -2684,7 +2730,8 @@
         `&name=${encodeURIComponent(newName)}` +
         `&status=${encodeURIComponent(status)}` +
         `&category=${encodeURIComponent(category)}` +
-        `&major=${encodeURIComponent(major)}`;
+        `&major=${encodeURIComponent(major)}` +
+        `&department=${encodeURIComponent(department)}`;
 
         try {
             const res = await fetch(url);
@@ -2715,7 +2762,8 @@
                         name: newName,
                         status,
                         category,
-                        major
+                        major,
+                        department
                     };
                     document.getElementById('notes-modal-title').textContent = newName;
                     document.getElementById('details-name').value = newName;
@@ -2724,6 +2772,7 @@
                 proj.status = status;
                 proj.category = category;
                 proj.major = major;
+                proj.department = department;
             }
 
             renderKanban();
@@ -2919,10 +2968,11 @@
         const status = document.getElementById('add-status').value;
         const cat = document.getElementById('add-category').value;
         const major = document.getElementById('add-major').value;
+        const department = document.getElementById('add-department').value;
         const note = document.getElementById('add-notes').value.trim();
-        const deadline = document.getElementById('add-deadline').value; // yyyy-mm-dd or ''
+        const deadline = document.getElementById('add-deadline').value;
 
-        if (!name || !status || !cat || !major) {
+        if (!name || !status || !cat || !major || !department) {
             showToast('Please fill all required fields', 'error');
             return;
         }
@@ -2931,7 +2981,7 @@
         btn.disabled = true;
         btn.innerHTML = '<div class="spinner" style="width:14px;height:14px;border-width:2px;margin-right:6px;"></div> Submitting…';
 
-        const url = `${APPS_SCRIPT_URL}?action=addActive&name=${encodeURIComponent(name)}&status=${encodeURIComponent(status)}&category=${encodeURIComponent(cat)}&major=${encodeURIComponent(major)}`;
+        const url = `${APPS_SCRIPT_URL}?action=addActive&name=${encodeURIComponent(name)}&status=${encodeURIComponent(status)}&category=${encodeURIComponent(cat)}&major=${encodeURIComponent(major)}&department=${encodeURIComponent(department)}`;
 
         try {
             await fetch(url, {
@@ -2961,6 +3011,7 @@
             document.getElementById('add-status').value = 'High Priority';
             document.getElementById('add-category').value = '';
             document.getElementById('add-major').value = 'Standalone';
+            document.getElementById('add-department').value = 'Strategy & Engagement';
             document.getElementById('add-notes').value = '';
             document.getElementById('add-deadline').value = '';
             document.getElementById('cat-suggest').style.display = 'none';
@@ -3103,7 +3154,8 @@
         grid.innerHTML = '';
         grid.appendChild(buildChart('Completed by Month', countBy(completedProjects, 'month', MONTHS), '#7c6af7', '#5e50d4'));
         grid.appendChild(buildChart('Completed by Category', countBy(completedProjects, 'category'), '#3ecf8e', '#2aaf76'));
-        grid.appendChild(buildChart('Completed by Major Project', countBy(completedProjects, 'major', MAJOR_PROJECTS), '#5ba4f5', '#3d8ce0'));
+        grid.appendChild(buildChart('Completed by Major Project', countBy(completedProjects, 'major', majorProjects), '#5ba4f5', '#3d8ce0'));
+        grid.appendChild(buildChart('Completed by Department / Campus', countBy(completedProjects, 'department'), '#f97316', '#ea6a0a'));
     }
 
     function countBy(arr, key, order) {
@@ -3241,6 +3293,34 @@
         }
     }
 
+    async function fetchDepartments() {
+        try {
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 8000);
+            const url = `${APPS_SCRIPT_URL}?action=getDepartments`;
+            const res = await fetch(url, {
+                signal: controller.signal
+            });
+            clearTimeout(timeout);
+            const data = await res.json();
+            if (data.departments && data.departments.length > 0)
+                departments = data.departments;
+        } catch (e) {
+            console.error('Could not load departments:', e);
+        }
+    }
+
+    async function saveDepartments() {
+        const url = `${APPS_SCRIPT_URL}?action=saveDepartments&departments=${encodeURIComponent(JSON.stringify(departments))}`;
+        try {
+            await fetch(url, {
+                mode: 'no-cors'
+            });
+        } catch (e) {
+            showToast('Could not save departments — try again', 'error');
+        }
+    }
+
     async function archiveYear() {
         const yearLabel = document.getElementById('archive-year-input').value.trim();
         const statusEl = document.getElementById('archive-status');
@@ -3293,6 +3373,7 @@
     function renderSettingsLists() {
         renderSettingsList('settings-cat-list', categories, 'cat');
         renderSettingsList('settings-major-list', majorProjects, 'major');
+        renderSettingsList('settings-dept-list', departments, 'dept');
     }
 
     function renderSettingsList(containerId, list, type) {
@@ -3310,10 +3391,39 @@
         });
     }
 
+    function getList(type) {
+        if (type === 'cat')
+            return categories;
+        if (type === 'major')
+            return majorProjects;
+        if (type === 'dept')
+            return departments;
+        return [];
+    }
+
+    function saveList(type) {
+        if (type === 'cat') {
+            saveCategories();
+            populateCategorySelect('add-category');
+            populateCategorySelect('modal-category');
+            populateCategorySelect('details-category');
+        }
+        if (type === 'major') {
+            saveMajorProjects();
+            populateMajorSelect('add-major');
+            populateMajorSelect('modal-major');
+            populateMajorSelect('details-major');
+        }
+        if (type === 'dept') {
+            saveDepartments();
+            populateDepartmentSelect('add-department');
+            populateDepartmentSelect('details-department');
+        }
+    }
+
     function startEdit(btn, type, idx) {
         const row = btn.closest('.settings-item');
-        const list = type === 'cat' ? categories : majorProjects;
-        const current = list[idx];
+        const current = getList(type)[idx];
         row.innerHTML = `
     <input class="edit-input" type="text" value="${escHtml(current)}">
     <button class="settings-item-btn save"   onclick="saveEdit(this,'${type}',${idx})">✓</button>
@@ -3335,36 +3445,19 @@
         const newVal = input.value.trim();
         if (!newVal)
             return;
-        if (type === 'cat') {
-            categories[idx] = newVal;
-            saveCategories();
-            populateCategorySelect('add-category');
-            populateCategorySelect('modal-category');
-        } else {
-            majorProjects[idx] = newVal;
-            saveMajorProjects();
-            populateMajorSelect('add-major');
-            populateMajorSelect('modal-major');
-        }
+        getList(type)[idx] = newVal;
+        saveList(type);
         renderSettingsLists();
         showToast('Renamed successfully', 'success');
     }
 
     function deleteItem(type, idx) {
-        const list = type === 'cat' ? categories : majorProjects;
+        const list = getList(type);
         const name = list[idx];
         if (!confirm(`Remove "${name}"?\n\nExisting projects using this value won't be affected.`))
             return;
         list.splice(idx, 1);
-        if (type === 'cat') {
-            saveCategories();
-            populateCategorySelect('add-category');
-            populateCategorySelect('modal-category');
-        } else {
-            saveMajorProjects();
-            populateMajorSelect('add-major');
-            populateMajorSelect('modal-major');
-        }
+        saveList(type);
         renderSettingsLists();
         showToast(`"${name}" removed`, 'success');
     }
@@ -3379,9 +3472,7 @@
             return;
         }
         categories.push(val);
-        saveCategories();
-        populateCategorySelect('add-category');
-        populateCategorySelect('modal-category');
+        saveList('cat');
         input.value = '';
         renderSettingsLists();
         showToast('Category added', 'success');
@@ -3397,12 +3488,26 @@
             return;
         }
         majorProjects.push(val);
-        saveMajorProjects();
-        populateMajorSelect('add-major');
-        populateMajorSelect('modal-major');
+        saveList('major');
         input.value = '';
         renderSettingsLists();
         showToast('Major project added', 'success');
+    }
+
+    function settingsAddDepartment() {
+        const input = document.getElementById('new-dept-input');
+        const val = input.value.trim();
+        if (!val || departments.includes(val)) {
+            if (!val)
+                return;
+            showToast('Already exists', 'error');
+            return;
+        }
+        departments.push(val);
+        saveList('dept');
+        input.value = '';
+        renderSettingsLists();
+        showToast('Department added', 'success');
     }
 
     // Allow Enter key in Settings add inputs
@@ -3414,6 +3519,10 @@
         document.getElementById('new-major-input').addEventListener('keydown', e => {
             if (e.key === 'Enter')
                 settingsAddMajor();
+        });
+        document.getElementById('new-dept-input').addEventListener('keydown', e => {
+            if (e.key === 'Enter')
+                settingsAddDepartment();
         });
     });
     </script>
