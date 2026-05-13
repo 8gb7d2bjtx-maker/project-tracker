@@ -1675,6 +1675,9 @@
                     <select id="filter-major" onchange="renderCompletedTable()">
                         <option value="">All Major Projects</option>
                     </select>
+                    <select id="filter-dept" onchange="renderCompletedTable()">
+                        <option value="">All Departments</option>
+                    </select>
                     <button class="btn-csv" onclick="downloadCSV()">
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -3055,13 +3058,14 @@
         const months = [...new Set(completedProjects.map(p => p.month).filter(Boolean))];
         const cats = [...new Set(completedProjects.map(p => p.category).filter(Boolean))].sort();
         const majors = [...new Set(completedProjects.map(p => p.major).filter(Boolean))].sort();
+        const depts = [...new Set(completedProjects.map(p => p.department).filter(Boolean))].sort();
 
         const mSel = document.getElementById('filter-month');
         const cSel = document.getElementById('filter-category');
         const mjSel = document.getElementById('filter-major');
+        const dSel = document.getElementById('filter-dept');
 
         mSel.innerHTML = '<option value="">All Months</option>';
-        // Keep chronological order based on MONTHS array
         MONTHS.filter(m => months.includes(m)).forEach(m => mSel.add(new Option(m, m)));
 
         cSel.innerHTML = '<option value="">All Categories</option>';
@@ -3069,12 +3073,16 @@
 
         mjSel.innerHTML = '<option value="">All Major Projects</option>';
         majors.forEach(m => mjSel.add(new Option(m, m)));
+
+        dSel.innerHTML = '<option value="">All Departments</option>';
+        depts.forEach(d => dSel.add(new Option(d, d)));
     }
 
     function renderCompletedTable() {
         const fMonth = document.getElementById('filter-month').value;
         const fCat = document.getElementById('filter-category').value;
         const fMajor = document.getElementById('filter-major').value;
+        const fDept = document.getElementById('filter-dept').value;
 
         let filtered = [...completedProjects].reverse();
         if (fMonth)
@@ -3083,6 +3091,8 @@
             filtered = filtered.filter(p => p.category === fCat);
         if (fMajor)
             filtered = filtered.filter(p => p.major === fMajor);
+        if (fDept)
+            filtered = filtered.filter(p => p.department === fDept);
 
         const wrap = document.getElementById('completed-table-wrap');
         if (filtered.length === 0) {
@@ -3096,11 +3106,13 @@
           <th>Project Name</th>
           <th>Category</th>
           <th>Major Project</th>
+          <th>Department / Campus</th>
           <th>Month Completed</th>
         </tr>
       </thead>
       <tbody>
         ${
+
 
 
 
@@ -3116,6 +3128,7 @@
         escHtml(p.name)}</td>
             <td><span class="pill pill-cat">${escHtml(p.category)}</span></td>
             <td><span class="pill pill-maj">${escHtml(p.major)}</span></td>
+            <td><span style="font-size:12px;color:var(--text2)">${escHtml(p.department || '')}</span></td>
             <td><span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text2)">${escHtml(p.month)}</span></td>
           </tr>`).join('')}
       </tbody>
@@ -3128,6 +3141,7 @@
         const fMonth = document.getElementById('filter-month').value;
         const fCat = document.getElementById('filter-category').value;
         const fMajor = document.getElementById('filter-major').value;
+        const fDept = document.getElementById('filter-dept').value;
         let data = completedProjects;
         if (fMonth)
             data = data.filter(p => p.month === fMonth);
@@ -3135,8 +3149,10 @@
             data = data.filter(p => p.category === fCat);
         if (fMajor)
             data = data.filter(p => p.major === fMajor);
+        if (fDept)
+            data = data.filter(p => p.department === fDept);
 
-        const rows = [['Project Name', 'Category', 'Major Project', 'Month Completed'], ...data.map(p => [p.name, p.category, p.major, p.month])];
+        const rows = [['Project Name', 'Category', 'Major Project', 'Department / Campus', 'Month Completed'], ...data.map(p => [p.name, p.category, p.major, p.department || '', p.month])];
         const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
         const a = document.createElement('a');
         a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
