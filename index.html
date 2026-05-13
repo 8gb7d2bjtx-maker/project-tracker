@@ -1612,20 +1612,12 @@
                                 <select id="add-category">
                                     <option value="">Select category…</option>
                                 </select>
-                                <div class="custom-cat-row">
-                                    <input type="text" id="custom-cat-input" placeholder="Add custom category…">
-                                    <button onclick="addCustomCategory()">Add</button>
-                                </div>
                             </div>
                             <div class="form-group">
                                 <label for="add-major">Major Project</label>
                                 <select id="add-major">
                                     <option value="">Select major project…</option>
                                 </select>
-                                <div class="custom-cat-row">
-                                    <input type="text" id="custom-major-input" placeholder="Add custom major project…">
-                                    <button onclick="addCustomMajorProject()">Add</button>
-                                </div>
                             </div>
                             <div class="form-group">
                                 <label for="add-department">Department / Campus</label>
@@ -2027,32 +2019,6 @@
         mm.innerHTML = '<option value="">Select month…</option>';
         MONTHS.forEach(m => mm.add(new Option(m, m)));
         populateMajorSelect('modal-major');
-    }
-
-    function addCustomCategory() {
-        const input = document.getElementById('custom-cat-input');
-        const val = input.value.trim();
-        if (!val || categories.includes(val))
-            return;
-        categories.push(val);
-        saveList('cat');
-        document.getElementById('add-category').value = val;
-        input.value = '';
-        renderSettingsLists();
-        showToast('Custom category added: ' + val, 'success');
-    }
-
-    function addCustomMajorProject() {
-        const input = document.getElementById('custom-major-input');
-        const val = input.value.trim();
-        if (!val || majorProjects.includes(val))
-            return;
-        majorProjects.push(val);
-        saveList('major');
-        document.getElementById('add-major').value = val;
-        input.value = '';
-        renderSettingsLists();
-        showToast('Custom major project added: ' + val, 'success');
     }
 
     // ── TABS ─────────────────────────────────────────────────────────
