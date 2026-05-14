@@ -2090,26 +2090,26 @@
         try {
             const rows = await fetchSheetTab('Active Projects');
             const dataRows = rows.filter((r, i) => {
-                if (i === 0 && r[0] && (r[0].toLowerCase() === 'timestamp' || r[0].toLowerCase() === 'project name'))
+                if (i === 0 && r[0] && (r[0].toLowerCase() === 'project name'))
                     return false;
-                return r[1] && r[1].trim() !== '';
+                return r[0] && r[0].trim() !== '';
             });
             activeProjects = dataRows.map(r => ({
-                name: r[1] || '',
-                status: r[2] || 'Mid Priority',
-                category: r[3] || '',
-                major: r[4] || '',
-                department: r[5] || '',
+                name: r[0] || '',
+                status: r[1] || 'Mid Priority',
+                category: r[2] || '',
+                major: r[3] || '',
+                department: r[4] || '',
             }));
-            // Populate notesMap and deadlinesMap directly from columns G (index 6) and H (index 7)
+            // Populate notesMap and deadlinesMap directly from columns F (index 5) and G (index 6)
             notesMap = {};
             deadlinesMap = {};
             dataRows.forEach(r => {
-                const name = (r[1] || '').trim();
+                const name = (r[0] || '').trim();
                 if (!name)
                     return;
-                const note = (r[6] || '').trim();
-                const deadline = (r[7] || '').trim();
+                const note = (r[5] || '').trim();
+                const deadline = (r[6] || '').trim();
                 if (note)
                     notesMap[name] = note;
                 if (deadline)
@@ -2142,16 +2142,16 @@
                 rows = await fetchSheetTabByName(tabName);
             }
             const dataRows = rows.filter((r, i) => {
-                if (i === 0 && r[0] && (r[0].toLowerCase() === 'timestamp' || r[0].toLowerCase() === 'project name'))
+                if (i === 0 && r[0] && r[0].toLowerCase() === 'project name')
                     return false;
-                return r[1] && r[1].trim() !== '';
+                return r[0] && r[0].trim() !== '';
             });
             completedProjects = dataRows.map(r => ({
-                name: r[1] || '',
-                category: r[2] || '',
-                month: r[3] || '',
-                major: r[4] || '',
-                department: r[5] || '',
+                name: r[0] || '',
+                category: r[1] || '',
+                month: r[2] || '',
+                major: r[3] || '',
+                department: r[4] || '',
             }));
             document.getElementById('count-completed').textContent = completedProjects.length;
             populateCompletedFilters();
