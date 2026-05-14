@@ -1994,14 +1994,10 @@
         fetchFocusedCards().then(() => renderKanban());
     }
 
-    async function refreshAll(btn) {
+    function refreshAll(btn) {
         if (btn)
             btn.classList.add('spinning');
-        await fetchAllData();
-        setTimeout(() => {
-            if (btn)
-                btn.classList.remove('spinning');
-        }, 700);
+        setTimeout(() => location.reload(), 300);
     }
 
     // Tab GIDs — find these by clicking each tab in Google Sheets and copying the #gid=XXXX from the URL.
