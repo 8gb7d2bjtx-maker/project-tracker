@@ -1982,10 +1982,9 @@
     async function fetchAllData() {
         // Fetch core data in parallel — archive tabs load separately so they
         // can't block the kanban or completed table from rendering
+        // Notes and deadlines are now read directly from Active Projects columns G & H
         await Promise.all([
         fetchActiveProjectsData(),
-        fetchNotes(),
-        fetchDeadlines(),
         fetchCompletedProjects(),
         ]);
         updateCountsAndMeta();
@@ -2010,9 +2009,7 @@
     const TAB_GIDS = {
         'Active Projects': '2066572307',
         'Completed Projects': '1795091806',
-        'Notes': '2136714643',
         'Major Projects': '1890335885',
-        'Deadline': '1776726907',
         'Categories': '1165421335',
         'Departments': '1623589589',
     };
@@ -2104,6 +2101,20 @@
                 major: r[4] || '',
                 department: r[5] || '',
             }));
+            // Populate notesMap and deadlinesMap directly from columns G (index 6) and H (index 7)
+            notesMap = {};
+            deadlinesMap = {};
+            dataRows.forEach(r => {
+                const name = (r[1] || '').trim();
+                if (!name)
+                    return;
+                const note = (r[6] || '').trim();
+                const deadline = (r[7] || '').trim();
+                if (note)
+                    notesMap[name] = note;
+                if (deadline)
+                    deadlinesMap[name] = deadline;
+            });
         } catch (e) {
             console.error('Error fetching active projects:', e);
             document.getElementById('kanban-board').innerHTML = `<div class="loading" style="color:var(--red)">⚠ Could not load projects: ${e.message}<br><span style="font-size:11px;margin-top:8px;display:block">Make sure your sheet is shared as "Anyone with the link can view"</span></div>`;
@@ -2116,7 +2127,7 @@
 
     // Keep fetchActiveProjects as a convenience for places that only need to reload active data
     async function fetchActiveProjects() {
-        await Promise.all([fetchActiveProjectsData(), fetchNotes(), fetchDeadlines()]);
+        await fetchActiveProjectsData();
         updateCountsAndMeta();
         renderKanban();
     }
@@ -2212,39 +2223,6 @@
         const val = document.getElementById('summary-year').value;
         document.getElementById('charts-grid').innerHTML = '<div class="loading"><div class="spinner"></div>Loading…</div>';
         await fetchCompletedProjects(val === 'current' ? 'Completed Projects' : val);
-    }
-
-    // Shared helper for timestamp-keyed sheet tabs (Notes, Deadline)
-    // Returns a map of { projectName → mostRecentValue }
-    async function fetchNameValueMap(tabName) {
-        try {
-            const rows = await fetchSheetTab(tabName);
-            const map = {};
-            rows.forEach((r, i) => {
-                if (i === 0 && r[0] && r[0].toLowerCase() === 'timestamp')
-                    return;
-                const name = (r[1] || '').trim();
-                const val = (r[2] || '').trim();
-                if (name)
-                    map[name] = val;
-            });
-            return map;
-        } catch (e) {
-            console.error(`Error fetching ${tabName}:`, e);
-            return null; // null = keep existing map
-        }
-    }
-
-    async function fetchNotes() {
-        const map = await fetchNameValueMap('Notes');
-        if (map !== null)
-            notesMap = map;
-    }
-
-    async function fetchDeadlines() {
-        const map = await fetchNameValueMap('Deadline');
-        if (map !== null)
-            deadlinesMap = map;
     }
 
     function formatDeadline(dateStr) {
@@ -2799,30 +2777,25 @@
         btn.disabled = true;
         btn.innerHTML = '<div class="spinner" style="width:14px;height:14px;border-width:2px;margin-right:6px;"></div> Submitting…';
 
-        const url = `${APPS_SCRIPT_URL}?action=addActive&name=${encodeURIComponent(name)}&status=${encodeURIComponent(status)}&category=${encodeURIComponent(cat)}&major=${encodeURIComponent(major)}&department=${encodeURIComponent(department)}`;
+        const url = `${APPS_SCRIPT_URL}?action=addActive`
+        + `&name=${encodeURIComponent(name)}`
+        + `&status=${encodeURIComponent(status)}`
+        + `&category=${encodeURIComponent(cat)}`
+        + `&major=${encodeURIComponent(major)}`
+        + `&department=${encodeURIComponent(department)}`
+        + `&note=${encodeURIComponent(note)}`
+        + `&deadline=${encodeURIComponent(deadline)}`;
 
         try {
             await fetch(url, {
                 mode: 'no-cors'
             });
 
-            // Submit note if entered
-            if (note) {
-                const noteUrl = `${APPS_SCRIPT_URL}?action=addNote&name=${encodeURIComponent(name)}&note=${encodeURIComponent(note)}`;
-                await fetch(noteUrl, {
-                    mode: 'no-cors'
-                });
+            // Update local maps immediately so card renders correctly before refresh
+            if (note)
                 notesMap[name] = note;
-            }
-
-            // Submit deadline if entered
-            if (deadline) {
-                const dlUrl = `${APPS_SCRIPT_URL}?action=setDeadline&name=${encodeURIComponent(name)}&deadline=${encodeURIComponent(deadline)}`;
-                await fetch(dlUrl, {
-                    mode: 'no-cors'
-                });
+            if (deadline)
                 deadlinesMap[name] = deadline;
-            }
 
             showToast(`"${name}" added successfully!`, 'success');
             resetAddForm();
