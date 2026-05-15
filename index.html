@@ -1028,11 +1028,15 @@
     .modal-name {
         font-weight: 600;
         color: var(--accent);
-        font-size: 13px;
+        font-size: 16px;
         background: var(--accent-glow);
         border-radius: var(--radius);
         padding: 8px 12px;
         margin-bottom: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
     }
 
     .modal-footer {
@@ -1871,7 +1875,10 @@
         <div class="modal">
             <h3>Mark as Complete</h3>
             <div class="modal-sub">Confirm details before submitting to Google Sheets</div>
-            <div class="modal-name" id="modal-project-name">—</div>
+            <div class="modal-name" id="modal-project-name-wrap">
+                <span id="modal-project-name">—</span>
+                <button class="modal-star-btn" id="modal-star-btn" onclick="toggleModalStar()" style="flex-shrink:0;padding:4px 8px;font-size:16px;">☆</button>
+            </div>
 
             <div class="form-group">
                 <label for="modal-category">Category</label>
@@ -1888,15 +1895,6 @@
             <div class="form-group">
                 <label for="modal-department">Department / Campus</label>
                 <select id="modal-department"></select>
-            </div>
-
-            <div class="modal-star-row">
-                <button class="modal-star-btn" id="modal-star-btn" onclick="toggleModalStar()">
-                    <span class="star-icon">☆</span>
-                     Star this project
-                          
-                </button>
-                <span style="font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;">optional — highlights in Completed tab</span>
             </div>
 
             <div class="modal-footer">
@@ -2768,16 +2766,14 @@
         // Reset star state
         const starBtn = document.getElementById('modal-star-btn');
         starBtn.classList.remove('starred');
-        starBtn.innerHTML = '<span class="star-icon">☆</span> Star this project';
+        starBtn.textContent = '☆';
         document.getElementById('complete-modal').classList.add('open');
     }
 
     function toggleModalStar() {
         const btn = document.getElementById('modal-star-btn');
         const isStarred = btn.classList.toggle('starred');
-        btn.innerHTML = isStarred
-        ? '<span class="star-icon">★</span> Starred'
-        : '<span class="star-icon">☆</span> Star this project';
+        btn.textContent = isStarred ? '★' : '☆';
     }
 
     function closeModal() {
@@ -3002,9 +2998,9 @@
         filtered.map(p => `
           <tr>
             <td>
-              ${
+              <span style="display:inline-block;width:18px;text-align:center;color:var(--accent);font-size:13px;flex-shrink:0;">${
 
-        p.starred ? '<span style="color:var(--accent);margin-right:5px;font-size:13px;" title="Starred">★</span>' : ''}
+        p.starred ? '★' : ''}</span>
               ${escHtml(p.name)}
             </td>
             <td><span class="pill pill-cat">${
