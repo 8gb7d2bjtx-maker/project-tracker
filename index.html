@@ -1117,6 +1117,70 @@
         border-color: var(--accent);
     }
 
+    .star-toggle {
+        background: none;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 8px 14px;
+        font-size: 13px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        color: var(--text3);
+        transition: all var(--transition);
+        white-space: nowrap;
+    }
+
+    .star-toggle:hover {
+        background: var(--surface3);
+        border-color: var(--border2);
+        color: var(--text2);
+    }
+
+    .star-toggle.active {
+        background: var(--accent-glow);
+        border-color: var(--accent);
+        color: var(--accent);
+    }
+
+    .modal-star-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 18px;
+    }
+
+    .modal-star-btn {
+        background: none;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 7px 14px;
+        font-size: 13px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        color: var(--text3);
+        transition: all var(--transition);
+    }
+
+    .modal-star-btn:hover {
+        background: var(--surface3);
+        border-color: var(--border2);
+    }
+
+    .modal-star-btn.starred {
+        background: var(--accent-glow);
+        border-color: var(--accent);
+        color: var(--accent);
+    }
+
+    .star-icon {
+        font-size: 15px;
+        line-height: 1;
+    }
+
     .btn-csv {
         background: var(--surface2);
         border: 1px solid var(--border);
@@ -1609,6 +1673,7 @@
                     <select id="filter-dept" onchange="renderCompletedTable()">
                         <option value="">All Departments</option>
                     </select>
+                    <button class="star-toggle" id="filter-starred-btn" onclick="toggleStarredFilter()">★ Starred</button>
                     <button class="btn-csv" onclick="downloadCSV()">
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -1823,6 +1888,15 @@
             <div class="form-group">
                 <label for="modal-department">Department / Campus</label>
                 <select id="modal-department"></select>
+            </div>
+
+            <div class="modal-star-row">
+                <button class="modal-star-btn" id="modal-star-btn" onclick="toggleModalStar()">
+                    <span class="star-icon">☆</span>
+                     Star this project
+                          
+                </button>
+                <span style="font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;">optional — highlights in Completed tab</span>
             </div>
 
             <div class="modal-footer">
@@ -2148,6 +2222,7 @@
                 month: r[2] || '',
                 major: r[3] || '',
                 department: r[4] || '',
+                starred: String(r[5] || '').toUpperCase() === 'TRUE',
             }));
             document.getElementById('count-completed').textContent = completedProjects.length;
             populateCompletedFilters();
@@ -2690,7 +2765,19 @@
         const mSel = document.getElementById('modal-month');
         if ([...mSel.options].some(o => o.value === guess))
             mSel.value = guess;
+        // Reset star state
+        const starBtn = document.getElementById('modal-star-btn');
+        starBtn.classList.remove('starred');
+        starBtn.innerHTML = '<span class="star-icon">☆</span> Star this project';
         document.getElementById('complete-modal').classList.add('open');
+    }
+
+    function toggleModalStar() {
+        const btn = document.getElementById('modal-star-btn');
+        const isStarred = btn.classList.toggle('starred');
+        btn.innerHTML = isStarred
+        ? '<span class="star-icon">★</span> Starred'
+        : '<span class="star-icon">☆</span> Star this project';
     }
 
     function closeModal() {
@@ -2705,6 +2792,7 @@
         const month = document.getElementById('modal-month').value;
         const major = document.getElementById('modal-major').value;
         const department = document.getElementById('modal-department').value;
+        const starred = document.getElementById('modal-star-btn').classList.contains('starred');
         if (!cat || !month || !major || !department) {
             showToast('Please fill all fields', 'error');
             return;
@@ -2719,7 +2807,8 @@
         `&category=${encodeURIComponent(cat)}` +
         `&month=${encodeURIComponent(month)}` +
         `&major=${encodeURIComponent(major)}` +
-        `&department=${encodeURIComponent(department)}`;
+        `&department=${encodeURIComponent(department)}` +
+        `&starred=${starred}`;
 
         try {
             const res = await fetch(url);
@@ -2855,6 +2944,15 @@
         depts.forEach(d => dSel.add(new Option(d, d)));
     }
 
+    let filterStarredOnly = false;
+
+    function toggleStarredFilter() {
+        filterStarredOnly = !filterStarredOnly;
+        const btn = document.getElementById('filter-starred-btn');
+        btn.classList.toggle('active', filterStarredOnly);
+        renderCompletedTable();
+    }
+
     function renderCompletedTable() {
         const fMonth = document.getElementById('filter-month').value;
         const fCat = document.getElementById('filter-category').value;
@@ -2870,6 +2968,8 @@
             filtered = filtered.filter(p => p.major === fMajor);
         if (fDept)
             filtered = filtered.filter(p => p.department === fDept);
+        if (filterStarredOnly)
+            filtered = filtered.filter(p => p.starred);
 
         const wrap = document.getElementById('completed-table-wrap');
         if (filtered.length === 0) {
@@ -2901,9 +3001,14 @@
 
         filtered.map(p => `
           <tr>
-            <td>${
-        escHtml(p.name)}</td>
-            <td><span class="pill pill-cat">${escHtml(p.category)}</span></td>
+            <td>
+              ${
+
+        p.starred ? '<span style="color:var(--accent);margin-right:5px;font-size:13px;" title="Starred">★</span>' : ''}
+              ${escHtml(p.name)}
+            </td>
+            <td><span class="pill pill-cat">${
+        escHtml(p.category)}</span></td>
             <td><span class="pill pill-maj">${escHtml(p.major)}</span></td>
             <td><span style="font-size:12px;color:var(--text2)">${escHtml(p.department || '')}</span></td>
             <td><span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text2)">${escHtml(p.month)}</span></td>
