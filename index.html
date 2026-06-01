@@ -1028,15 +1028,11 @@
     .modal-name {
         font-weight: 600;
         color: var(--accent);
-        font-size: 16px;
+        font-size: 13px;
         background: var(--accent-glow);
         border-radius: var(--radius);
         padding: 8px 12px;
         margin-bottom: 18px;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 10px;
     }
 
     .modal-footer {
@@ -1119,70 +1115,6 @@
     .filter-row select:focus {
         outline: none;
         border-color: var(--accent);
-    }
-
-    .star-toggle {
-        background: none;
-        border: 1px solid var(--border);
-        border-radius: var(--radius);
-        padding: 8px 14px;
-        font-size: 13px;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        color: var(--text3);
-        transition: all var(--transition);
-        white-space: nowrap;
-    }
-
-    .star-toggle:hover {
-        background: var(--surface3);
-        border-color: var(--border2);
-        color: var(--text2);
-    }
-
-    .star-toggle.active {
-        background: var(--accent-glow);
-        border-color: var(--accent);
-        color: var(--accent);
-    }
-
-    .modal-star-row {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        margin-bottom: 18px;
-    }
-
-    .modal-star-btn {
-        background: none;
-        border: 1px solid var(--border);
-        border-radius: var(--radius);
-        padding: 7px 14px;
-        font-size: 13px;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        color: var(--text3);
-        transition: all var(--transition);
-    }
-
-    .modal-star-btn:hover {
-        background: var(--surface3);
-        border-color: var(--border2);
-    }
-
-    .modal-star-btn.starred {
-        background: var(--accent-glow);
-        border-color: var(--accent);
-        color: var(--accent);
-    }
-
-    .star-icon {
-        font-size: 15px;
-        line-height: 1;
     }
 
     .btn-csv {
@@ -1542,8 +1474,8 @@
             <div class="logo">
                 <img id="header-icon" src="" alt="RISD Tracker" style="width:32px;height:32px;border-radius:6px;display:block;flex-shrink:0;">
                 <div>
-                    <div class="logo-text">RISD Project Tracker</div>
-                    <div class="logo-sub">Graphic Design</div>
+                    <div class="logo-text">Graphic Design</div>
+                    <div class="logo-sub">RISD Strategy &amp; Engagement</div>
                 </div>
             </div>
             <nav>
@@ -1677,7 +1609,6 @@
                     <select id="filter-dept" onchange="renderCompletedTable()">
                         <option value="">All Departments</option>
                     </select>
-                    <button class="star-toggle" id="filter-starred-btn" onclick="toggleStarredFilter()">★ Starred</button>
                     <button class="btn-csv" onclick="downloadCSV()">
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -1875,10 +1806,7 @@
         <div class="modal">
             <h3>Mark as Complete</h3>
             <div class="modal-sub">Confirm details before submitting to Google Sheets</div>
-            <div class="modal-name" id="modal-project-name-wrap">
-                <span id="modal-project-name">—</span>
-                <button class="modal-star-btn" id="modal-star-btn" onclick="toggleModalStar()" style="flex-shrink:0;padding:4px 8px;font-size:16px;">☆</button>
-            </div>
+            <div class="modal-name" id="modal-project-name">—</div>
 
             <div class="form-group">
                 <label for="modal-category">Category</label>
@@ -2066,10 +1994,14 @@
         fetchFocusedCards().then(() => renderKanban());
     }
 
-    function refreshAll(btn) {
+    async function refreshAll(btn) {
         if (btn)
             btn.classList.add('spinning');
-        setTimeout(() => location.reload(), 300);
+        await fetchAllData();
+        setTimeout(() => {
+            if (btn)
+                btn.classList.remove('spinning');
+        }, 700);
     }
 
     // Tab GIDs — find these by clicking each tab in Google Sheets and copying the #gid=XXXX from the URL.
@@ -2220,7 +2152,6 @@
                 month: r[2] || '',
                 major: r[3] || '',
                 department: r[4] || '',
-                starred: String(r[5] || '').toUpperCase() === 'TRUE',
             }));
             document.getElementById('count-completed').textContent = completedProjects.length;
             populateCompletedFilters();
@@ -2345,16 +2276,13 @@
                 const colEl = document.createElement('div');
                 colEl.className = `kanban-col ${col.cls}`;
                 colEl.innerHTML = `
-        <div class="kanban-col-header">
-          <div class="col-title"><div class="col-dot"></div>${
-                col.status}</div>
-          <div class="col-count">${projects.length}</div>
-        </div>
-        <div class="kanban-cards" id="col-${
-                col.status.replace(/\W+/g, '-')}">
-          ${projects.length === 0 ? '<div class="kanban-empty">Empty</div>' : ''}
-        </div>`
-                ;
+                        <div class="kanban-col-header">
+                          <div class="col-title"><div class="col-dot"></div>${col.status}</div>
+                          <div class="col-count">${projects.length}</div>
+                        </div>
+                        <div class="kanban-cards" id="col-${col.status.replace(/\W+/g, '-')}">
+                          ${projects.length === 0 ? '<div class="kanban-empty">Empty</div>' : ''}
+                        </div>`;
                 rowEl.appendChild(colEl);
 
                 // ── Drop target handlers ──
@@ -2408,17 +2336,13 @@
         const deadlineDisplay = deadline ? formatDeadline(deadline) : '';
 
         card.innerHTML = `
-    <div class="card-name" style="cursor:pointer">${escHtml(project.name)}</div>
-    <div class="card-actions">
-      ${
-        deadlineDisplay ? `<span class="card-deadline">${deadlineDisplay}</span>` : ''}
-      <button class="card-action-btn notes-btn ${hasNote ? 'has-notes' : ''}" title="${hasNote ? 'View/edit note' : 'Add note'}">🛈</button>
-      <button class="card-action-btn done-btn" title="Mark complete">✓</button>
-      <button class="card-action-btn delete-btn" title="Remove project">✕</button>
-    </div>`
-
-
-        ;
+            <div class="card-name" style="cursor:pointer">${escHtml(project.name)}</div>
+            <div class="card-actions">
+              ${deadlineDisplay ? `<span class="card-deadline">${deadlineDisplay}</span>` : ''}
+              <button class="card-action-btn notes-btn ${hasNote ? 'has-notes' : ''}" title="${hasNote ? 'View/edit note' : 'Add note'}">🛈</button>
+              <button class="card-action-btn done-btn" title="Mark complete">✓</button>
+              <button class="card-action-btn delete-btn" title="Remove project">✕</button>
+            </div>`;
 
         if (isFocused)
             card.classList.add('focused');
@@ -2763,17 +2687,7 @@
         const mSel = document.getElementById('modal-month');
         if ([...mSel.options].some(o => o.value === guess))
             mSel.value = guess;
-        // Reset star state
-        const starBtn = document.getElementById('modal-star-btn');
-        starBtn.classList.remove('starred');
-        starBtn.textContent = '☆';
         document.getElementById('complete-modal').classList.add('open');
-    }
-
-    function toggleModalStar() {
-        const btn = document.getElementById('modal-star-btn');
-        const isStarred = btn.classList.toggle('starred');
-        btn.textContent = isStarred ? '★' : '☆';
     }
 
     function closeModal() {
@@ -2788,7 +2702,6 @@
         const month = document.getElementById('modal-month').value;
         const major = document.getElementById('modal-major').value;
         const department = document.getElementById('modal-department').value;
-        const starred = document.getElementById('modal-star-btn').classList.contains('starred');
         if (!cat || !month || !major || !department) {
             showToast('Please fill all fields', 'error');
             return;
@@ -2803,8 +2716,7 @@
         `&category=${encodeURIComponent(cat)}` +
         `&month=${encodeURIComponent(month)}` +
         `&major=${encodeURIComponent(major)}` +
-        `&department=${encodeURIComponent(department)}` +
-        `&starred=${starred}`;
+        `&department=${encodeURIComponent(department)}`;
 
         try {
             const res = await fetch(url);
@@ -2907,9 +2819,8 @@
         if (match) {
             el.style.display = 'block';
             el.innerHTML = `<span class="suggest-tag" onclick="document.getElementById('add-category').value='${match}'; this.parentElement.style.display='none';">
-      ✦ Suggested: ${match}
-    </span>`
-            ;
+                  ✦ Suggested: ${match}
+                </span>`;
         } else {
             el.style.display = 'none';
         }
@@ -2940,15 +2851,6 @@
         depts.forEach(d => dSel.add(new Option(d, d)));
     }
 
-    let filterStarredOnly = false;
-
-    function toggleStarredFilter() {
-        filterStarredOnly = !filterStarredOnly;
-        const btn = document.getElementById('filter-starred-btn');
-        btn.classList.toggle('active', filterStarredOnly);
-        renderCompletedTable();
-    }
-
     function renderCompletedTable() {
         const fMonth = document.getElementById('filter-month').value;
         const fCat = document.getElementById('filter-category').value;
@@ -2964,8 +2866,6 @@
             filtered = filtered.filter(p => p.major === fMajor);
         if (fDept)
             filtered = filtered.filter(p => p.department === fDept);
-        if (filterStarredOnly)
-            filtered = filtered.filter(p => p.starred);
 
         const wrap = document.getElementById('completed-table-wrap');
         if (filtered.length === 0) {
@@ -2973,46 +2873,27 @@
             return;
         }
         wrap.innerHTML = `
-    <table class="data-table">
-      <thead>
-        <tr>
-          <th>Project Name</th>
-          <th>Category</th>
-          <th>Major Project</th>
-          <th>Department / Campus</th>
-          <th>Month Completed</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${
-
-
-
-
-
-
-
-
-
-
-        filtered.map(p => `
-          <tr>
-            <td>
-              <span style="display:inline-block;width:18px;text-align:center;color:var(--accent);font-size:13px;flex-shrink:0;">${
-
-        p.starred ? '★' : ''}</span>
-              ${escHtml(p.name)}
-            </td>
-            <td><span class="pill pill-cat">${
-        escHtml(p.category)}</span></td>
-            <td><span class="pill pill-maj">${escHtml(p.major)}</span></td>
-            <td><span style="font-size:12px;color:var(--text2)">${escHtml(p.department || '')}</span></td>
-            <td><span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text2)">${escHtml(p.month)}</span></td>
-          </tr>`).join('')}
-      </tbody>
-    </table>`
-
-        ;
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Project Name</th>
+                  <th>Category</th>
+                  <th>Major Project</th>
+                  <th>Department / Campus</th>
+                  <th>Month Completed</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${filtered.map(p => `
+                  <tr>
+                    <td>${escHtml(p.name)}</td>
+                    <td><span class="pill pill-cat">${escHtml(p.category)}</span></td>
+                    <td><span class="pill pill-maj">${escHtml(p.major)}</span></td>
+                    <td><span style="font-size:12px;color:var(--text2)">${escHtml(p.department || '')}</span></td>
+                    <td><span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text2)">${escHtml(p.month)}</span></td>
+                  </tr>`).join('')}
+              </tbody>
+            </table>`;
     }
 
     function downloadCSV() {
@@ -3069,20 +2950,16 @@
         card.className = 'chart-card';
         const max = data.length ? Math.max(...data.map(d => d[1])) : 1;
         card.innerHTML = `
-    <h3>${title}</h3>
-    <div class="chart-inner">
-      ${
-        data.map(([label, count], i) => {const pct = Math.round((count / max) * 100);const grad = `linear-gradient(90deg, ${colorA}, ${colorB})`;return `<div class="bar-row">
-          <div class="bar-label" title="${escHtml(label)}">${escHtml(label)}</div>
-          <div class="bar-track">
-            <div class="bar-fill" style="width:${
-            pct}%;background:${grad};opacity:${0.6 + 0.4 * (i === 0 ? 1 : count / max)}"></div>
-          </div>
-          <div class="bar-value">${
-            count}</div>
-        </div>`;}).join('')}
-    </div>`
-        ;
+            <h3>${title}</h3>
+            <div class="chart-inner">
+              ${data.map(([label, count], i) => {const pct = Math.round((count / max) * 100);const grad = `linear-gradient(90deg, ${colorA}, ${colorB})`;return `<div class="bar-row">
+                      <div class="bar-label" title="${escHtml(label)}">${escHtml(label)}</div>
+                      <div class="bar-track">
+                        <div class="bar-fill" style="width:${pct}%;background:${grad};opacity:${0.6 + 0.4 * (i === 0 ? 1 : count / max)}"></div>
+                      </div>
+                      <div class="bar-value">${count}</div>
+                    </div>`;}).join('')}
+            </div>`;
         return card;
     }
 
@@ -3284,9 +3161,9 @@
             row.className = 'settings-item';
             row.dataset.idx = idx;
             row.innerHTML = `
-      <span class="settings-item-name">${escHtml(item)}</span>
-      <button class="settings-item-btn edit" title="Rename" onclick="startEdit(this,'${type}',${idx})">✎</button>
-      <button class="settings-item-btn delete" title="Delete" onclick="deleteItem('${type}',${idx})">✕</button>`;
+                  <span class="settings-item-name">${escHtml(item)}</span>
+                  <button class="settings-item-btn edit" title="Rename" onclick="startEdit(this,'${type}',${idx})">✎</button>
+                  <button class="settings-item-btn delete" title="Delete" onclick="deleteItem('${type}',${idx})">✕</button>`;
             el.appendChild(row);
         });
     }
@@ -3326,10 +3203,9 @@
         const row = btn.closest('.settings-item');
         const current = getList(type)[idx];
         row.innerHTML = `
-    <input class="edit-input" type="text" value="${escHtml(current)}">
-    <button class="settings-item-btn save"   onclick="saveEdit(this,'${type}',${idx})">✓</button>
-    <button class="settings-item-btn cancel" onclick="renderSettingsLists()">✕</button>`
-        ;
+            <input class="edit-input" type="text" value="${escHtml(current)}">
+            <button class="settings-item-btn save"   onclick="saveEdit(this,'${type}',${idx})">✓</button>
+            <button class="settings-item-btn cancel" onclick="renderSettingsLists()">✕</button>`;
         const input = row.querySelector('input');
         input.focus();
         input.select();
