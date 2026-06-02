@@ -1489,6 +1489,24 @@
                 </button>
                 <button class="tab-btn" data-tab="summary">Summary</button>
                 <button class="tab-btn" data-tab="settings">⚙ Settings</button>
+                <div style="display:flex;align-items:center;gap:8px;margin-left:auto;padding-right:0;">
+                    <button class="refresh-icon-btn" id="refresh-icon-btn" onclick="refreshAll(this)" title="Refresh data">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="1 4 1 10 7 10"></polyline>
+                            <path d="M3.51 15a9 9 0 1 0 .49-3"></path>
+                        </svg>
+                    </button>
+                    <button class="add-project-toggle-btn" id="add-panel-btn" onclick="toggleAddPanel()">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="8" x2="12" y2="16"></line>
+                            <line x1="8" y1="12" x2="16" y2="12"></line>
+                        </svg>
+
+                                  Add Project
+                                
+                    </button>
+                </div>
             </nav>
         </header>
 
@@ -1496,27 +1514,6 @@
 
             <!-- ACTIVE PROJECTS -->
             <div class="tab-panel active" id="tab-active">
-                <div class="kanban-header">
-                    <span class="kanban-meta" id="active-meta"></span>
-                    <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
-                        <button class="refresh-icon-btn" id="refresh-icon-btn" onclick="refreshAll(this)" title="Refresh data">
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                <polyline points="1 4 1 10 7 10"></polyline>
-                                <path d="M3.51 15a9 9 0 1 0 .49-3"></path>
-                            </svg>
-                        </button>
-                        <button class="add-project-toggle-btn" id="add-panel-btn" onclick="toggleAddPanel()">
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                                <circle cx="12" cy="12" r="10"></circle>
-                                <line x1="12" y1="8" x2="12" y2="16"></line>
-                                <line x1="8" y1="12" x2="16" y2="12"></line>
-                            </svg>
-
-                                        Add Project
-                                      
-                        </button>
-                    </div>
-                </div>
                 <div class="kanban-with-panel" id="kanban-with-panel">
                     <div class="kanban-board" id="kanban-board">
                         <div class="loading">
@@ -2272,7 +2269,19 @@
             rowEl.className = `kanban-row row-${rowKey}`;
 
             COL_CONFIG[rowKey].forEach(col => {
-                const projects = activeProjects.filter(p => p.status === col.status);
+                const projects = activeProjects
+                .filter(p => p.status === col.status)
+                .sort((a, b) => {
+                    const da = deadlinesMap[a.name] || '';
+                    const db = deadlinesMap[b.name] || '';
+                    if (!da && !db)
+                        return 0;
+                    if (!da)
+                        return 1; // no date goes to bottom
+                    if (!db)
+                        return -1;
+                    return da < db ? -1 : da > db ? 1 : 0;
+                });
                 const colEl = document.createElement('div');
                 colEl.className = `kanban-col ${col.cls}`;
                 colEl.innerHTML = `
@@ -2335,10 +2344,23 @@
         const deadline = deadlinesMap[project.name] || '';
         const deadlineDisplay = deadline ? formatDeadline(deadline) : '';
 
+        // Deadline urgency color
+        let deadlineColor = 'var(--text3)';
+        if (deadline) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const due = new Date(deadline + 'T00:00:00');
+            const diffDays = (due - today) / (1000 * 60 * 60 * 24);
+            if (diffDays < 0)
+                deadlineColor = 'var(--red)';
+            else if (diffDays <= 7)
+                deadlineColor = '#000000';
+        }
+
         card.innerHTML = `
             <div class="card-name" style="cursor:pointer">${escHtml(project.name)}</div>
             <div class="card-actions">
-              ${deadlineDisplay ? `<span class="card-deadline">${deadlineDisplay}</span>` : ''}
+              ${deadlineDisplay ? `<span class="card-deadline" style="color:${deadlineColor}">${deadlineDisplay}</span>` : ''}
               <button class="card-action-btn notes-btn ${hasNote ? 'has-notes' : ''}" title="${hasNote ? 'View/edit note' : 'Add note'}">🛈</button>
               <button class="card-action-btn done-btn" title="Mark complete">✓</button>
               <button class="card-action-btn delete-btn" title="Remove project">✕</button>
@@ -2594,6 +2616,11 @@
                             dlSpan.className = 'card-deadline';
                             actionsEl.insertBefore(dlSpan, actionsEl.firstChild);
                         }
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        const due = new Date(deadline + 'T00:00:00');
+                        const diffDays = (due - today) / (1000 * 60 * 60 * 24);
+                        dlSpan.style.color = diffDays < 0 ? 'var(--red)' : diffDays <= 7 ? '#000000' : 'var(--text3)';
                         dlSpan.textContent = formatDeadline(deadline);
                     } else if (dlSpan) {
                         dlSpan.remove();
