@@ -1966,6 +1966,14 @@
     }
 
     function toggleAddPanel() {
+        // If we're not on the Projects tab, switch to it first
+        const activeTab = document.querySelector('.tab-btn.active');
+        if (activeTab && activeTab.dataset.tab !== 'active') {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+            document.querySelector('[data-tab="active"]').classList.add('active');
+            document.getElementById('tab-active').classList.add('active');
+        }
         const panel = document.getElementById('add-panel');
         const btn = document.getElementById('add-panel-btn');
         const isOpen = panel.classList.toggle('open');
@@ -3053,7 +3061,7 @@
             const rows = await fetchSheetTab(tabName);
             const vals = rows.map(r => (r[0] || '').trim()).filter(v => v !== '');
             if (vals.length > 0)
-                targetRef.arr = vals;
+                targetRef.arr = vals.sort((a, b) => a.localeCompare(b));
         } catch (e) {
             console.error(`Could not load ${tabName} from sheet:`, e);
         }
@@ -3250,6 +3258,7 @@
         if (!newVal)
             return;
         getList(type)[idx] = newVal;
+        getList(type).sort((a, b) => a.localeCompare(b));
         saveList(type);
         renderSettingsLists();
         showToast('Renamed successfully', 'success');
@@ -3277,6 +3286,7 @@
             return;
         }
         list.push(val);
+        list.sort((a, b) => a.localeCompare(b));
         saveList(type);
         input.value = '';
         renderSettingsLists();
