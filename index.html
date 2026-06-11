@@ -637,6 +637,14 @@
 
         .kanban-header {
             padding: 10px 12px 8px;
+        }/* Settings: hide text, show only gear icon */
+
+        .tab-btn[data-tab="settings"] .settings-label {
+            display: none;
+        }/* Add Project: hide text, show only + icon */
+
+        .add-project-toggle-btn .add-label {
+            display: none;
         }
     }
 
@@ -1474,8 +1482,8 @@
             <div class="logo">
                 <img id="header-icon" src="" alt="RISD Tracker" style="width:32px;height:32px;border-radius:6px;display:block;flex-shrink:0;">
                 <div>
-                    <div class="logo-text">Graphic Design</div>
-                    <div class="logo-sub">RISD Strategy &amp; Engagement</div>
+                    <div class="logo-text">RISD Project Tracker</div>
+                    <div class="logo-sub">Graphic Design</div>
                 </div>
             </div>
             <nav>
@@ -1488,7 +1496,10 @@
                     <span class="tab-count" id="count-completed">—</span>
                 </button>
                 <button class="tab-btn" data-tab="summary">Summary</button>
-                <button class="tab-btn" data-tab="settings">⚙ Settings</button>
+                <button class="tab-btn" data-tab="settings">
+                    ⚙ 
+                    <span class="settings-label">Settings</span>
+                </button>
                 <div style="display:flex;align-items:center;gap:8px;margin-left:auto;padding-right:0;">
                     <button class="refresh-icon-btn" id="refresh-icon-btn" onclick="refreshAll(this)" title="Refresh data">
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -1502,9 +1513,7 @@
                             <line x1="12" y1="8" x2="12" y2="16"></line>
                             <line x1="8" y1="12" x2="16" y2="12"></line>
                         </svg>
-
-                                  Add Project
-                                
+                        <span class="add-label">Add Project</span>
                     </button>
                 </div>
             </nav>
@@ -1574,6 +1583,13 @@
                                     <span style="color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">(optional)</span>
                                 </label>
                                 <input type="date" id="add-deadline">
+                            </div>
+                            <div class="form-group">
+                                <label for="add-url">
+                                    URL 
+                                    <span style="color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">(optional)</span>
+                                </label>
+                                <input type="text" id="add-url" placeholder="https://…">
                             </div>
                             <button class="btn-primary" id="add-submit-btn" onclick="submitAddProject()">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -1737,9 +1753,12 @@
 
     <!-- PROJECT DETAILS MODAL -->
     <div class="notes-modal-overlay" id="notes-modal">
-        <div class="notes-modal" style="max-width:480px;">
+        <div class="notes-modal" style="max-width:660px;">
             <div class="notes-modal-header">
-                <div class="notes-modal-title" id="notes-modal-title">—</div>
+                <div style="display:flex;align-items:baseline;gap:10px;flex:1;min-width:0;">
+                    <div class="notes-modal-title" id="notes-modal-title">—</div>
+                    <div id="notes-modal-date-added" style="font-size:11px;font-family:'DM Mono',monospace;color:var(--text3);flex-shrink:0;"></div>
+                </div>
                 <button class="notes-modal-close" onclick="closeNotesModal()">✕</button>
             </div>
 
@@ -1775,6 +1794,13 @@
                     <label for="details-department">Department / Campus</label>
                     <select id="details-department" style="width:100%;"></select>
                 </div>
+                <div class="form-group" style="margin-bottom:14px;">
+                    <label for="details-url">
+                        URL 
+                        <span style="color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">(optional)</span>
+                    </label>
+                    <input type="text" id="details-url" style="width:100%;" placeholder="https://…">
+                </div>
                 <button class="notes-save-btn" id="details-save-btn" onclick="saveProjectDetails()" style="width:100%;padding:8px;">Save Changes</button>
                 <div class="notes-status" id="details-status-msg" style="margin-top:6px;display:block;"></div>
             </div>
@@ -1790,10 +1816,26 @@
 
             <!-- Notes -->
             <div id="notes-modal-preview" style="display:none;font-size:13px;line-height:1.6;color:var(--text);background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;margin-bottom:10px;white-space:pre-wrap;word-break:break-word;"></div>
-            <textarea id="notes-modal-textarea" placeholder="Add notes, links, context…" rows="4"></textarea>
+            <textarea id="notes-modal-textarea" placeholder="Add notes, links, context…" rows="5"></textarea>
             <div class="notes-save-row">
                 <button class="notes-save-btn" id="notes-modal-save-btn" onclick="saveNoteFromModal()">Save note</button>
                 <span class="notes-status" id="notes-modal-status"></span>
+            </div>
+
+            <!-- Checklist -->
+            <div style="margin-top:16px;">
+                <button class="details-section-toggle" id="checklist-toggle" onclick="toggleChecklistSection()">
+                    <span class="toggle-arrow" id="checklist-arrow">▶</span>
+                    <span>Checklist</span>
+                    <span id="checklist-count" style="margin-left:auto;font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);"></span>
+                </button>
+                <div id="checklist-section-body" style="display:none;background:var(--surface2);border:1px solid var(--border);border-top:none;border-radius:0 0 var(--radius) var(--radius);padding:12px;">
+                    <div id="checklist-items" style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px;"></div>
+                    <div style="display:flex;gap:8px;">
+                        <input type="text" id="checklist-new-item" placeholder="Add item…" style="flex:1;font-size:13px;padding:7px 10px;" onkeydown="if(event.key==='Enter')addChecklistItem()">
+                        <button class="notes-save-btn" onclick="addChecklistItem()" style="padding:7px 14px;">Add</button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -1966,7 +2008,7 @@
     }
 
     function toggleAddPanel() {
-        // If we're not on the Projects tab, switch to it first
+        // If not on Projects tab, switch to it first
         const activeTab = document.querySelector('.tab-btn.active');
         if (activeTab && activeTab.dataset.tab !== 'active') {
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -1978,8 +2020,84 @@
         const btn = document.getElementById('add-panel-btn');
         const isOpen = panel.classList.toggle('open');
         btn.classList.toggle('open', isOpen);
-        if (isOpen) {
+        if (isOpen)
             setTimeout(() => document.getElementById('add-name').focus(), 320);
+    }
+
+    function toggleChecklistSection() {
+        const body = document.getElementById('checklist-section-body');
+        const arrow = document.getElementById('checklist-arrow');
+        const isOpen = body.style.display === 'none' || body.style.display === '';
+        body.style.display = isOpen ? 'block' : 'none';
+        arrow.style.transform = isOpen ? 'rotate(90deg)' : '';
+    }
+
+    function renderChecklist(projectName) {
+        const items = checklistMap[projectName] || [];
+        const container = document.getElementById('checklist-items');
+        const countEl = document.getElementById('checklist-count');
+        const done = items.filter(i => i.done).length;
+        countEl.textContent = items.length ? `${done}/${items.length}` : '';
+        container.innerHTML = '';
+        items.forEach((item, idx) => {
+            const row = document.createElement('div');
+            row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:4px 0;';
+            row.innerHTML = `
+                  <input type="checkbox" ${item.done ? 'checked' : ''} style="width:15px;height:15px;cursor:pointer;accent-color:var(--accent);">
+                  <span style="flex:1;font-size:13px;${item.done ? 'text-decoration:line-through;color:var(--text3);' : ''}">${escHtml(item.text)}</span>
+                  <button style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:12px;padding:2px 5px;border-radius:4px;" title="Remove" onclick="removeChecklistItem(${idx})">✕</button>`;
+            row.querySelector('input').addEventListener('change', () => toggleChecklistItem(idx));
+            container.appendChild(row);
+        });
+    }
+
+    async function addChecklistItem() {
+        if (!currentNotesProject)
+            return;
+        const input = document.getElementById('checklist-new-item');
+        const text = input.value.trim();
+        if (!text)
+            return;
+        const items = checklistMap[currentNotesProject.name] || [];
+        items.push({
+            text,
+            done: false
+        });
+        checklistMap[currentNotesProject.name] = items;
+        input.value = '';
+        renderChecklist(currentNotesProject.name);
+        await saveChecklist(currentNotesProject.name);
+    }
+
+    async function toggleChecklistItem(idx) {
+        if (!currentNotesProject)
+            return;
+        const items = checklistMap[currentNotesProject.name] || [];
+        if (items[idx])
+            items[idx].done = !items[idx].done;
+        renderChecklist(currentNotesProject.name);
+        await saveChecklist(currentNotesProject.name);
+    }
+
+    async function removeChecklistItem(idx) {
+        if (!currentNotesProject)
+            return;
+        const items = checklistMap[currentNotesProject.name] || [];
+        items.splice(idx, 1);
+        renderChecklist(currentNotesProject.name);
+        await saveChecklist(currentNotesProject.name);
+    }
+
+    async function saveChecklist(projectName) {
+        const items = checklistMap[projectName] || [];
+        const json = JSON.stringify(items);
+        const url = `${APPS_SCRIPT_URL}?action=saveChecklist&name=${encodeURIComponent(projectName)}&checklist=${encodeURIComponent(json)}`;
+        try {
+            await fetch(url, {
+                mode: 'no-cors'
+            });
+        } catch (e) {
+            console.warn('Could not save checklist:', e);
         }
     }
 
@@ -2019,8 +2137,11 @@
         'Departments': '1623589589',
     };
 
-    let notesMap = {}; // projectName → most recent note text
-    let deadlinesMap = {}; // projectName → most recent deadline string
+    let notesMap = {}; // projectName → note text
+    let deadlinesMap = {}; // projectName → deadline string (yyyy-mm-dd)
+    let urlsMap = {}; // projectName → url string
+    let dateAddedMap = {}; // projectName → date added string (MM/DD/YY)
+    let checklistMap = {}; // projectName → JSON array of {text, done}
 
     function parseCSV(text) {
         // Robust CSV parser that handles quoted fields with commas/newlines
@@ -2095,7 +2216,7 @@
         try {
             const rows = await fetchSheetTab('Active Projects');
             const dataRows = rows.filter((r, i) => {
-                if (i === 0 && r[0] && (r[0].toLowerCase() === 'project name'))
+                if (i === 0 && r[0] && r[0].toLowerCase() === 'project name')
                     return false;
                 return r[0] && r[0].trim() !== '';
             });
@@ -2106,19 +2227,32 @@
                 major: r[3] || '',
                 department: r[4] || '',
             }));
-            // Populate notesMap and deadlinesMap directly from columns F (index 5) and G (index 6)
+            // col A=0 name, B=1 status, C=2 cat, D=3 major, E=4 dept,
+            // F=5 notes, G=6 deadline, H=7 url, I=8 dateAdded, J=9 checklist
             notesMap = {};
             deadlinesMap = {};
+            urlsMap = {};
+            dateAddedMap = {};
+            checklistMap = {};
             dataRows.forEach(r => {
                 const name = (r[0] || '').trim();
                 if (!name)
                     return;
-                const note = (r[5] || '').trim();
-                const deadline = (r[6] || '').trim();
-                if (note)
-                    notesMap[name] = note;
-                if (deadline)
-                    deadlinesMap[name] = deadline;
+                if ((r[5] || '').trim())
+                    notesMap[name] = r[5].trim();
+                if ((r[6] || '').trim())
+                    deadlinesMap[name] = r[6].trim();
+                if ((r[7] || '').trim())
+                    urlsMap[name] = r[7].trim();
+                if ((r[8] || '').trim())
+                    dateAddedMap[name] = r[8].trim();
+                if ((r[9] || '').trim()) {
+                    try {
+                        checklistMap[name] = JSON.parse(r[9].trim());
+                    } catch (e) {
+                        checklistMap[name] = [];
+                    }
+                }
             });
         } catch (e) {
             console.error('Error fetching active projects:', e);
@@ -2147,16 +2281,16 @@
                 rows = await fetchSheetTabByName(tabName);
             }
             const dataRows = rows.filter((r, i) => {
-                if (i === 0 && r[0] && r[0].toLowerCase() === 'project name')
+                if (i === 0 && r[0] && (r[0].toLowerCase() === 'timestamp' || r[0].toLowerCase() === 'project name'))
                     return false;
-                return r[0] && r[0].trim() !== '';
+                return r[1] && r[1].trim() !== '';
             });
             completedProjects = dataRows.map(r => ({
-                name: r[0] || '',
-                category: r[1] || '',
-                month: r[2] || '',
-                major: r[3] || '',
-                department: r[4] || '',
+                name: r[1] || '',
+                category: r[2] || '',
+                month: r[3] || '',
+                major: r[4] || '',
+                department: r[5] || '',
             }));
             document.getElementById('count-completed').textContent = completedProjects.length;
             populateCompletedFilters();
@@ -2285,7 +2419,7 @@
                     if (!da && !db)
                         return 0;
                     if (!da)
-                        return 1; // no date goes to bottom
+                        return 1;
                     if (!db)
                         return -1;
                     return da < db ? -1 : da > db ? 1 : 0;
@@ -2351,6 +2485,7 @@
         const isFocused = focusedCards.has(project.name);
         const deadline = deadlinesMap[project.name] || '';
         const deadlineDisplay = deadline ? formatDeadline(deadline) : '';
+        const projectUrl = urlsMap[project.name] || '';
 
         // Deadline urgency color
         let deadlineColor = 'var(--text3)';
@@ -2369,6 +2504,9 @@
             <div class="card-name" style="cursor:pointer">${escHtml(project.name)}</div>
             <div class="card-actions">
               ${deadlineDisplay ? `<span class="card-deadline" style="color:${deadlineColor}">${deadlineDisplay}</span>` : ''}
+              ${projectUrl ? `<button class="card-action-btn link-btn" title="Open link">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+              </button>` : ''}
               <button class="card-action-btn notes-btn ${hasNote ? 'has-notes' : ''}" title="${hasNote ? 'View/edit note' : 'Add note'}">🛈</button>
               <button class="card-action-btn done-btn" title="Mark complete">✓</button>
               <button class="card-action-btn delete-btn" title="Remove project">✕</button>
@@ -2395,6 +2533,15 @@
             setTimeout(() => card.classList.add('dragging'), 0);
         });
         card.addEventListener('dragend', () => card.classList.remove('dragging'));
+
+        // ── Link button ──
+        const linkBtn = card.querySelector('.link-btn');
+        if (linkBtn) {
+            linkBtn.addEventListener('click', e => {
+                e.stopPropagation();
+                window.open(urlsMap[project.name], '_blank', 'noopener');
+            });
+        }
 
         // ── Notes button ──
         card.querySelector('.notes-btn').addEventListener('click', e => {
@@ -2456,6 +2603,8 @@
 
         // Header
         document.getElementById('notes-modal-title').textContent = project.name;
+        const dateAdded = dateAddedMap[project.name] || '';
+        document.getElementById('notes-modal-date-added').textContent = dateAdded ? `Added ${dateAdded}` : '';
 
         // Populate editable fields
         document.getElementById('details-name').value = project.name;
@@ -2466,6 +2615,7 @@
         document.getElementById('details-category').value = project.category || '';
         document.getElementById('details-major').value = project.major || 'Standalone';
         document.getElementById('details-department').value = project.department || 'Strategy & Engagement';
+        document.getElementById('details-url').value = urlsMap[project.name] || '';
         document.getElementById('details-status-msg').textContent = '';
         document.getElementById('details-save-btn').disabled = false;
 
@@ -2496,6 +2646,11 @@
             document.getElementById('notes-modal-save-btn').textContent = 'Save note';
         }
 
+        // Checklist — collapsed by default
+        document.getElementById('checklist-section-body').style.display = 'none';
+        document.getElementById('checklist-arrow').style.transform = '';
+        renderChecklist(project.name);
+
         document.getElementById('notes-modal').classList.add('open');
         if (!savedNote.trim())
             setTimeout(() => textarea.focus(), 50);
@@ -2518,6 +2673,7 @@
         const category = document.getElementById('details-category').value;
         const major = document.getElementById('details-major').value;
         const department = document.getElementById('details-department').value;
+        const urlVal = document.getElementById('details-url').value.trim();
 
         if (!newName) {
             statusEl.textContent = 'Name cannot be empty';
@@ -2535,7 +2691,8 @@
         `&status=${encodeURIComponent(status)}` +
         `&category=${encodeURIComponent(category)}` +
         `&major=${encodeURIComponent(major)}` +
-        `&department=${encodeURIComponent(department)}`;
+        `&department=${encodeURIComponent(department)}` +
+        `&url=${encodeURIComponent(urlVal)}`;
 
         try {
             const res = await fetch(url);
@@ -2555,6 +2712,18 @@
                     if (deadlinesMap[oldName] !== undefined) {
                         deadlinesMap[newName] = deadlinesMap[oldName];
                         delete deadlinesMap[oldName];
+                    }
+                    if (urlsMap[oldName] !== undefined) {
+                        urlsMap[newName] = urlsMap[oldName];
+                        delete urlsMap[oldName];
+                    }
+                    if (dateAddedMap[oldName] !== undefined) {
+                        dateAddedMap[newName] = dateAddedMap[oldName];
+                        delete dateAddedMap[oldName];
+                    }
+                    if (checklistMap[oldName] !== undefined) {
+                        checklistMap[newName] = checklistMap[oldName];
+                        delete checklistMap[oldName];
                     }
                     if (focusedCards.has(oldName)) {
                         focusedCards.add(newName);
@@ -2578,6 +2747,8 @@
                 proj.major = major;
                 proj.department = department;
             }
+            // Update URL in local map
+            urlsMap[newName] = urlVal;
 
             renderKanban();
             updateCountsAndMeta();
@@ -2624,11 +2795,6 @@
                             dlSpan.className = 'card-deadline';
                             actionsEl.insertBefore(dlSpan, actionsEl.firstChild);
                         }
-                        const today = new Date();
-                        today.setHours(0, 0, 0, 0);
-                        const due = new Date(deadline + 'T00:00:00');
-                        const diffDays = (due - today) / (1000 * 60 * 60 * 24);
-                        dlSpan.style.color = diffDays < 0 ? 'var(--red)' : diffDays <= 7 ? '#000000' : 'var(--text3)';
                         dlSpan.textContent = formatDeadline(deadline);
                     } else if (dlSpan) {
                         dlSpan.remove();
@@ -2783,6 +2949,7 @@
         document.getElementById('add-department').value = 'Strategy & Engagement';
         document.getElementById('add-notes').value = '';
         document.getElementById('add-deadline').value = '';
+        document.getElementById('add-url').value = '';
         document.getElementById('cat-suggest').style.display = 'none';
     }
 
@@ -2795,6 +2962,7 @@
         const department = document.getElementById('add-department').value;
         const note = document.getElementById('add-notes').value.trim();
         const deadline = document.getElementById('add-deadline').value;
+        const urlVal = document.getElementById('add-url').value.trim();
 
         if (!name || !status || !cat || !major || !department) {
             showToast('Please fill all required fields', 'error');
@@ -2812,7 +2980,8 @@
         + `&major=${encodeURIComponent(major)}`
         + `&department=${encodeURIComponent(department)}`
         + `&note=${encodeURIComponent(note)}`
-        + `&deadline=${encodeURIComponent(deadline)}`;
+        + `&deadline=${encodeURIComponent(deadline)}`
+        + `&url=${encodeURIComponent(urlVal)}`;
 
         try {
             await fetch(url, {
@@ -2824,6 +2993,8 @@
                 notesMap[name] = note;
             if (deadline)
                 deadlinesMap[name] = deadline;
+            if (urlVal)
+                urlsMap[name] = urlVal;
 
             showToast(`"${name}" added successfully!`, 'success');
             resetAddForm();
@@ -2964,7 +3135,7 @@
         grid.innerHTML = '';
         grid.appendChild(buildChart('Completed by Month', countBy(completedProjects, 'month', MONTHS), '#7c6af7', '#5e50d4'));
         grid.appendChild(buildChart('Completed by Category', countBy(completedProjects, 'category'), '#3ecf8e', '#2aaf76'));
-        grid.appendChild(buildChart('Completed by Major Project', countBy(completedProjects, 'major', majorProjects), '#5ba4f5', '#3d8ce0'));
+        grid.appendChild(buildChart('Completed by Major Project', countBy(completedProjects.filter(p => p.major !== 'Standalone'), 'major', majorProjects.filter(m => m !== 'Standalone')), '#5ba4f5', '#3d8ce0'));
         grid.appendChild(buildChart('Completed by Department / Campus', countBy(completedProjects, 'department'), '#f97316', '#ea6a0a'));
     }
 
@@ -3061,7 +3232,7 @@
             const rows = await fetchSheetTab(tabName);
             const vals = rows.map(r => (r[0] || '').trim()).filter(v => v !== '');
             if (vals.length > 0)
-                targetRef.arr = vals.sort((a, b) => a.localeCompare(b));
+                targetRef.arr = vals;
         } catch (e) {
             console.error(`Could not load ${tabName} from sheet:`, e);
         }
@@ -3258,7 +3429,6 @@
         if (!newVal)
             return;
         getList(type)[idx] = newVal;
-        getList(type).sort((a, b) => a.localeCompare(b));
         saveList(type);
         renderSettingsLists();
         showToast('Renamed successfully', 'success');
@@ -3286,7 +3456,6 @@
             return;
         }
         list.push(val);
-        list.sort((a, b) => a.localeCompare(b));
         saveList(type);
         input.value = '';
         renderSettingsLists();
