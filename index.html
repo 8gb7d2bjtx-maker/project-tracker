@@ -1125,6 +1125,56 @@
         border-color: var(--accent);
     }
 
+    .star-toggle {
+        background: none;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 8px 14px;
+        font-size: 13px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        color: var(--text3);
+        transition: all var(--transition);
+        white-space: nowrap;
+    }
+
+    .star-toggle:hover {
+        background: var(--surface3);
+        border-color: var(--border2);
+        color: var(--text2);
+    }
+
+    .star-toggle.active {
+        background: var(--accent-glow);
+        border-color: var(--accent);
+        color: var(--accent);
+    }
+
+    .modal-star-btn {
+        background: none;
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 4px 8px;
+        font-size: 16px;
+        cursor: pointer;
+        color: var(--text3);
+        transition: all var(--transition);
+        flex-shrink: 0;
+    }
+
+    .modal-star-btn:hover {
+        background: var(--surface3);
+        border-color: var(--border2);
+    }
+
+    .modal-star-btn.starred {
+        background: var(--accent-glow);
+        border-color: var(--accent);
+        color: var(--accent);
+    }
+
     .btn-csv {
         background: var(--surface2);
         border: 1px solid var(--border);
@@ -1622,6 +1672,7 @@
                     <select id="filter-dept" onchange="renderCompletedTable()">
                         <option value="">All Departments</option>
                     </select>
+                    <button class="star-toggle" id="filter-starred-btn" onclick="toggleStarredFilter()">★ Starred</button>
                     <button class="btn-csv" onclick="downloadCSV()">
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
@@ -1845,7 +1896,10 @@
         <div class="modal">
             <h3>Mark as Complete</h3>
             <div class="modal-sub">Confirm details before submitting to Google Sheets</div>
-            <div class="modal-name" id="modal-project-name">—</div>
+            <div class="modal-name" id="modal-project-name-wrap" style="font-size:16px;display:flex;align-items:center;justify-content:space-between;gap:10px;">
+                <span id="modal-project-name">—</span>
+                <button class="modal-star-btn" id="modal-star-btn" onclick="toggleModalStar()" title="Star this project">☆</button>
+            </div>
 
             <div class="form-group">
                 <label for="modal-category">Category</label>
@@ -2891,7 +2945,17 @@
         const mSel = document.getElementById('modal-month');
         if ([...mSel.options].some(o => o.value === guess))
             mSel.value = guess;
+        // Reset star state
+        const starBtn = document.getElementById('modal-star-btn');
+        starBtn.classList.remove('starred');
+        starBtn.textContent = '☆';
         document.getElementById('complete-modal').classList.add('open');
+    }
+
+    function toggleModalStar() {
+        const btn = document.getElementById('modal-star-btn');
+        const isStarred = btn.classList.toggle('starred');
+        btn.textContent = isStarred ? '★' : '☆';
     }
 
     function closeModal() {
@@ -2906,6 +2970,7 @@
         const month = document.getElementById('modal-month').value;
         const major = document.getElementById('modal-major').value;
         const department = document.getElementById('modal-department').value;
+        const starred = document.getElementById('modal-star-btn').classList.contains('starred');
         if (!cat || !month || !major || !department) {
             showToast('Please fill all fields', 'error');
             return;
@@ -2920,7 +2985,8 @@
         `&category=${encodeURIComponent(cat)}` +
         `&month=${encodeURIComponent(month)}` +
         `&major=${encodeURIComponent(major)}` +
-        `&department=${encodeURIComponent(department)}`;
+        `&department=${encodeURIComponent(department)}` +
+        `&starred=${starred}`;
 
         try {
             const res = await fetch(url);
@@ -3060,6 +3126,14 @@
         depts.forEach(d => dSel.add(new Option(d, d)));
     }
 
+    let filterStarredOnly = false;
+
+    function toggleStarredFilter() {
+        filterStarredOnly = !filterStarredOnly;
+        document.getElementById('filter-starred-btn').classList.toggle('active', filterStarredOnly);
+        renderCompletedTable();
+    }
+
     function renderCompletedTable() {
         const fMonth = document.getElementById('filter-month').value;
         const fCat = document.getElementById('filter-category').value;
@@ -3075,6 +3149,8 @@
             filtered = filtered.filter(p => p.major === fMajor);
         if (fDept)
             filtered = filtered.filter(p => p.department === fDept);
+        if (filterStarredOnly)
+            filtered = filtered.filter(p => p.starred);
 
         const wrap = document.getElementById('completed-table-wrap');
         if (filtered.length === 0) {
@@ -3095,7 +3171,10 @@
               <tbody>
                 ${filtered.map(p => `
                   <tr>
-                    <td>${escHtml(p.name)}</td>
+                    <td>
+                      <span style="display:inline-block;width:18px;text-align:center;color:var(--accent);font-size:13px;">${p.starred ? '★' : ''}</span>
+                      ${escHtml(p.name)}
+                    </td>
                     <td><span class="pill pill-cat">${escHtml(p.category)}</span></td>
                     <td><span class="pill pill-maj">${escHtml(p.major)}</span></td>
                     <td><span style="font-size:12px;color:var(--text2)">${escHtml(p.department || '')}</span></td>
