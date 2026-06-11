@@ -1814,28 +1814,28 @@
                 <input type="date" id="notes-modal-deadline" style="width:100%;" onchange="autoSaveDeadline()">
             </div>
 
+            <!-- Checklist -->
+            <div style="margin-bottom:14px;">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+                    <label style="font-size:11px;margin-bottom:0;">
+                        Checklist 
+                        <span id="checklist-count" style="color:var(--text3);font-weight:400;font-family:'DM Mono',monospace;"></span>
+                    </label>
+                    <button id="checklist-add-toggle" onclick="toggleChecklistAddField()" style="background:none;border:none;color:var(--accent);font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif;padding:0;">+ Add item</button>
+                </div>
+                <div id="checklist-items" style="display:flex;flex-direction:column;gap:5px;"></div>
+                <div id="checklist-add-row" style="display:none;gap:8px;margin-top:8px;">
+                    <input type="text" id="checklist-new-item" placeholder="New item…" style="flex:1;font-size:13px;padding:7px 10px;" onkeydown="if(event.key==='Enter')addChecklistItem();if(event.key==='Escape')toggleChecklistAddField()">
+                    <button class="notes-save-btn" onclick="addChecklistItem()" style="padding:7px 14px;">Add</button>
+                </div>
+            </div>
+
             <!-- Notes -->
             <div id="notes-modal-preview" style="display:none;font-size:13px;line-height:1.6;color:var(--text);background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:10px 12px;margin-bottom:10px;white-space:pre-wrap;word-break:break-word;"></div>
             <textarea id="notes-modal-textarea" placeholder="Add notes, links, context…" rows="5"></textarea>
             <div class="notes-save-row">
                 <button class="notes-save-btn" id="notes-modal-save-btn" onclick="saveNoteFromModal()">Save note</button>
                 <span class="notes-status" id="notes-modal-status"></span>
-            </div>
-
-            <!-- Checklist -->
-            <div style="margin-top:16px;">
-                <button class="details-section-toggle" id="checklist-toggle" onclick="toggleChecklistSection()">
-                    <span class="toggle-arrow" id="checklist-arrow">▶</span>
-                    <span>Checklist</span>
-                    <span id="checklist-count" style="margin-left:auto;font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);"></span>
-                </button>
-                <div id="checklist-section-body" style="display:none;background:var(--surface2);border:1px solid var(--border);border-top:none;border-radius:0 0 var(--radius) var(--radius);padding:12px;">
-                    <div id="checklist-items" style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px;"></div>
-                    <div style="display:flex;gap:8px;">
-                        <input type="text" id="checklist-new-item" placeholder="Add item…" style="flex:1;font-size:13px;padding:7px 10px;" onkeydown="if(event.key==='Enter')addChecklistItem()">
-                        <button class="notes-save-btn" onclick="addChecklistItem()" style="padding:7px 14px;">Add</button>
-                    </div>
-                </div>
             </div>
         </div>
     </div>
@@ -2024,12 +2024,12 @@
             setTimeout(() => document.getElementById('add-name').focus(), 320);
     }
 
-    function toggleChecklistSection() {
-        const body = document.getElementById('checklist-section-body');
-        const arrow = document.getElementById('checklist-arrow');
-        const isOpen = body.style.display === 'none' || body.style.display === '';
-        body.style.display = isOpen ? 'block' : 'none';
-        arrow.style.transform = isOpen ? 'rotate(90deg)' : '';
+    function toggleChecklistAddField() {
+        const row = document.getElementById('checklist-add-row');
+        const isHidden = row.style.display === 'none' || row.style.display === '';
+        row.style.display = isHidden ? 'flex' : 'none';
+        if (isHidden)
+            setTimeout(() => document.getElementById('checklist-new-item').focus(), 50);
     }
 
     function renderChecklist(projectName) {
@@ -2043,12 +2043,14 @@
             const row = document.createElement('div');
             row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:4px 0;';
             row.innerHTML = `
-                  <input type="checkbox" ${item.done ? 'checked' : ''} style="width:15px;height:15px;cursor:pointer;accent-color:var(--accent);">
+                  <input type="checkbox" ${item.done ? 'checked' : ''} style="width:15px;height:15px;cursor:pointer;accent-color:var(--accent);flex-shrink:0;">
                   <span style="flex:1;font-size:13px;${item.done ? 'text-decoration:line-through;color:var(--text3);' : ''}">${escHtml(item.text)}</span>
                   <button style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:12px;padding:2px 5px;border-radius:4px;" title="Remove" onclick="removeChecklistItem(${idx})">✕</button>`;
             row.querySelector('input').addEventListener('change', () => toggleChecklistItem(idx));
             container.appendChild(row);
         });
+        // Hide add row on re-render
+        document.getElementById('checklist-add-row').style.display = 'none';
     }
 
     async function addChecklistItem() {
@@ -2281,16 +2283,17 @@
                 rows = await fetchSheetTabByName(tabName);
             }
             const dataRows = rows.filter((r, i) => {
-                if (i === 0 && r[0] && (r[0].toLowerCase() === 'timestamp' || r[0].toLowerCase() === 'project name'))
+                if (i === 0 && r[0] && r[0].toLowerCase() === 'project name')
                     return false;
-                return r[1] && r[1].trim() !== '';
+                return r[0] && r[0].trim() !== '';
             });
             completedProjects = dataRows.map(r => ({
-                name: r[1] || '',
-                category: r[2] || '',
-                month: r[3] || '',
-                major: r[4] || '',
-                department: r[5] || '',
+                name: r[0] || '',
+                category: r[1] || '',
+                month: r[2] || '',
+                major: r[3] || '',
+                department: r[4] || '',
+                starred: String(r[5] || '').toUpperCase() === 'TRUE',
             }));
             document.getElementById('count-completed').textContent = completedProjects.length;
             populateCompletedFilters();
@@ -2501,12 +2504,14 @@
         }
 
         card.innerHTML = `
-            <div class="card-name" style="cursor:pointer">${escHtml(project.name)}</div>
+            <div class="card-name" style="cursor:pointer;display:flex;align-items:center;gap:4px;">
+              <span class="card-name-text">${escHtml(project.name)}</span>
+              ${projectUrl ? `<button class="card-action-btn link-btn" title="Open link" style="flex-shrink:0;padding:2px 4px;font-size:11px;color:var(--text3);">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+              </button>` : ''}
+            </div>
             <div class="card-actions">
               ${deadlineDisplay ? `<span class="card-deadline" style="color:${deadlineColor}">${deadlineDisplay}</span>` : ''}
-              ${projectUrl ? `<button class="card-action-btn link-btn" title="Open link">
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-              </button>` : ''}
               <button class="card-action-btn notes-btn ${hasNote ? 'has-notes' : ''}" title="${hasNote ? 'View/edit note' : 'Add note'}">🛈</button>
               <button class="card-action-btn done-btn" title="Mark complete">✓</button>
               <button class="card-action-btn delete-btn" title="Remove project">✕</button>
@@ -2515,8 +2520,8 @@
         if (isFocused)
             card.classList.add('focused');
 
-        // ── Focus toggle (click name) ──
-        card.querySelector('.card-name').addEventListener('click', e => {
+        // ── Focus toggle (click name text only) ──
+        card.querySelector('.card-name-text').addEventListener('click', e => {
             e.stopPropagation();
             const nowFocused = card.classList.toggle('focused');
             if (nowFocused)
@@ -2646,9 +2651,7 @@
             document.getElementById('notes-modal-save-btn').textContent = 'Save note';
         }
 
-        // Checklist — collapsed by default
-        document.getElementById('checklist-section-body').style.display = 'none';
-        document.getElementById('checklist-arrow').style.transform = '';
+        // Checklist — always visible, add row hidden by default
         renderChecklist(project.name);
 
         document.getElementById('notes-modal').classList.add('open');
