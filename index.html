@@ -2173,14 +2173,10 @@
         fetchFocusedCards().then(() => renderKanban());
     }
 
-    async function refreshAll(btn) {
+    function refreshAll(btn) {
         if (btn)
             btn.classList.add('spinning');
-        await fetchAllData();
-        setTimeout(() => {
-            if (btn)
-                btn.classList.remove('spinning');
-        }, 700);
+        setTimeout(() => location.reload(), 300);
     }
 
     // Tab GIDs — find these by clicking each tab in Google Sheets and copying the #gid=XXXX from the URL.
@@ -2842,7 +2838,7 @@
             deadlinesMap[currentNotesProject.name] = deadline;
 
             // Update deadline on card immediately
-            document.querySelectorAll('.card-name').forEach(el => {
+            document.querySelectorAll('.card-name-text').forEach(el => {
                 if (el.textContent === currentNotesProject.name) {
                     const actionsEl = el.closest('.project-card').querySelector('.card-actions');
                     let dlSpan = actionsEl.querySelector('.card-deadline');
@@ -2852,6 +2848,11 @@
                             dlSpan.className = 'card-deadline';
                             actionsEl.insertBefore(dlSpan, actionsEl.firstChild);
                         }
+                        const today = new Date();
+                        today.setHours(0, 0, 0, 0);
+                        const due = new Date(deadline + 'T00:00:00');
+                        const diffDays = (due - today) / (1000 * 60 * 60 * 24);
+                        dlSpan.style.color = diffDays < 0 ? 'var(--red)' : diffDays <= 7 ? '#000000' : 'var(--text3)';
                         dlSpan.textContent = formatDeadline(deadline);
                     } else if (dlSpan) {
                         dlSpan.remove();
@@ -3314,7 +3315,7 @@
             const rows = await fetchSheetTab(tabName);
             const vals = rows.map(r => (r[0] || '').trim()).filter(v => v !== '');
             if (vals.length > 0)
-                targetRef.arr = vals;
+                targetRef.arr = vals.sort((a, b) => a.localeCompare(b));
         } catch (e) {
             console.error(`Could not load ${tabName} from sheet:`, e);
         }
@@ -3511,6 +3512,7 @@
         if (!newVal)
             return;
         getList(type)[idx] = newVal;
+        getList(type).sort((a, b) => a.localeCompare(b));
         saveList(type);
         renderSettingsLists();
         showToast('Renamed successfully', 'success');
@@ -3538,6 +3540,7 @@
             return;
         }
         list.push(val);
+        list.sort((a, b) => a.localeCompare(b));
         saveList(type);
         input.value = '';
         renderSettingsLists();
