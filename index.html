@@ -1976,7 +1976,7 @@
     <script>
     // ── CONFIG ──────────────────────────────────────────────────────
     const SHEET_ID = '1X0h3QfumXPgfnSB6FzoT7ZsAgjulSWAe1efDRdYkCN0';
-    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzctzp0VxqyGYZvG25zdFu_EAN4S4DxpVRzjN1GjNoYNg6lD9chL_gjqiTmYWc0FwVdsg/exec';
+    const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx_JL2JuEtCThDh0-qlfNc9LFZSIGgvQbaZpMB8I1cKGRavZ9KxS7cbPhIE7h2_khl9HQ/exec';
 
     const STATUSES = ['High Priority', '1st Draft / Editing', 'Mid Priority', 'Low Priority', 'Waiting on Information'];
     let majorProjects = ['Standalone', 'Bond', 'Enrollment', 'Magnet', 'Center Stage', 'Dream Big', 'WWYLS', 'Legends & Legacies', 'Teacher of the Year', 'Dual Language Schools', 'CTE', 'Fine Arts', 'We Read Together', 'AVID', 'Financial Aid', 'TI12', 'Web Graphics'];
@@ -2413,10 +2413,12 @@
     }
 
     async function fetchSheetTabByName(tabName) {
-        // For archive tabs we don't have GIDs pre-stored, so we use the CSV export
-        // with the sheet name encoded — Google redirects to correct GID automatically
+        // For archive tabs we don't have GIDs pre-stored. Note: the /export
+        // endpoint only resolves tabs by gid — it silently ignores a `sheet`
+        // name param and falls back to the first/default tab. The gviz query
+        // endpoint is the one that actually resolves tabs by name.
         const encoded = encodeURIComponent(tabName);
-        const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&sheet=${encoded}`;
+        const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encoded}`;
         const res = await fetch(url, {
             redirect: 'follow'
         });
