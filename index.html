@@ -1538,16 +1538,22 @@
             </div>
             <nav>
                 <button class="tab-btn active" data-tab="active">
-                    Projects 
+
+                                        Projects 
+                                        
                     <span class="tab-count" id="count-active">—</span>
                 </button>
                 <button class="tab-btn" data-tab="completed">
-                    Completed 
+
+                                        Completed 
+                                        
                     <span class="tab-count" id="count-completed">—</span>
                 </button>
                 <button class="tab-btn" data-tab="summary">Summary</button>
                 <button class="tab-btn" data-tab="settings">
-                    ⚙ 
+
+                                        ⚙ 
+                                        
                     <span class="settings-label">Settings</span>
                 </button>
                 <div style="display:flex;align-items:center;gap:8px;margin-left:auto;padding-right:0;">
@@ -1577,7 +1583,9 @@
                     <div class="kanban-board" id="kanban-board">
                         <div class="loading">
                             <div class="spinner"></div>
-                            Loading projects…
+
+                                                        Loading projects…
+                                                    
                         </div>
                     </div>
                     <div class="add-panel" id="add-panel">
@@ -1622,21 +1630,27 @@
                             </div>
                             <div class="form-group">
                                 <label for="add-notes">
-                                    Notes 
+
+                                                                        Notes 
+                                                                        
                                     <span style="color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">(optional)</span>
                                 </label>
                                 <textarea id="add-notes" placeholder="Add any notes, links, or context…" rows="3" style="resize:vertical;"></textarea>
                             </div>
                             <div class="form-group">
                                 <label for="add-deadline">
-                                    Deadline 
+
+                                                                        Deadline 
+                                                                        
                                     <span style="color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">(optional)</span>
                                 </label>
                                 <input type="date" id="add-deadline">
                             </div>
                             <div class="form-group">
                                 <label for="add-url">
-                                    URL 
+
+                                                                        URL 
+                                                                        
                                     <span style="color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">(optional)</span>
                                 </label>
                                 <input type="text" id="add-url" placeholder="https://…">
@@ -1646,8 +1660,10 @@
                                     <polyline points="20 6 9 17 4 12"></polyline>
                                 </svg>
 
-                                              Add Project to Sheet
-                                            
+
+                                                                              Add Project to Sheet
+                                                                            
+                                                            
                             </button>
                         </div>
                     </div>
@@ -1680,8 +1696,10 @@
                             <line x1="12" y1="15" x2="12" y2="3"></line>
                         </svg>
 
-                                  Export CSV
-                                
+
+                                                          Export CSV
+                                                        
+                                            
                     </button>
                 </div>
                 <div style="padding: 0 24px 24px;">
@@ -1689,7 +1707,9 @@
                         <div id="completed-table-wrap">
                             <div class="loading">
                                 <div class="spinner"></div>
-                                Loading…
+
+                                                                Loading…
+                                                            
                             </div>
                         </div>
                     </div>
@@ -1707,7 +1727,9 @@
                 <div class="charts-grid" id="charts-grid" style="padding:16px 24px 24px;">
                     <div class="loading">
                         <div class="spinner"></div>
-                        Loading data…
+
+                                                Loading data…
+                                            
                     </div>
                 </div>
             </div>
@@ -1725,8 +1747,10 @@
                                 <rect x="3" y="3" width="18" height="18" rx="2"/>
                             </svg>
 
-                                        Categories
-                                      
+
+                                                                    Categories
+                                                                  
+                                                    
                         </h2>
                         <div class="settings-add-row">
                             <input type="text" id="new-cat-input" placeholder="New category…">
@@ -1744,8 +1768,10 @@
                                 <path d="M3 17h8v4H3z"/>
                             </svg>
 
-                                        Major Projects
-                                      
+
+                                                                    Major Projects
+                                                                  
+                                                    
                         </h2>
                         <div class="settings-add-row">
                             <input type="text" id="new-major-input" placeholder="New major project…">
@@ -1762,8 +1788,10 @@
                                 <polyline points="9 22 9 12 15 12 15 22"/>
                             </svg>
 
-                                        Departments / Campuses
-                                      
+
+                                                                    Departments / Campuses
+                                                                  
+                                                    
                         </h2>
                         <div class="settings-add-row">
                             <input type="text" id="new-dept-input" placeholder="New department…">
@@ -1781,19 +1809,21 @@
                                 <path d="M10 12h4"/>
                             </svg>
 
-                                        Archive Year
-                                      
+
+                                                                    Archive Year
+                                                                  
+                                                    
                         </h2>
                         <p style="font-size:12px;color:var(--text2);margin-bottom:16px;line-height:1.6;">
-                                    At the end of each school year (June), archive completed projects to a new tab. This clears the Completed tab for the new year while preserving all historical data.
-                                  </p>
+                                                            At the end of each school year (June), archive completed projects to a new tab. This clears the Completed tab for the new year while preserving all historical data.
+                                                          </p>
                         <div class="form-group" style="margin-bottom:14px;">
                             <label for="archive-year-input">School Year Label</label>
                             <input type="text" id="archive-year-input" placeholder="e.g. 2025-2026" style="width:100%;">
                         </div>
                         <button onclick="archiveYear()" style="background:var(--red);border:none;color:#fff;border-radius:var(--radius);padding:9px 16px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;width:100%;transition:background 0.18s ease;" onmouseover="this.style.background='#c0392b'" onmouseout="this.style.background='var(--red)'">
-                                    Archive &amp; Reset Completed Projects
-                                  </button>
+                                                            Archive &amp; Reset Completed Projects
+                                                          </button>
                         <div id="archive-status" style="font-size:12px;margin-top:10px;font-family:'DM Mono',monospace;min-height:18px;"></div>
                     </div>
 
@@ -1847,7 +1877,9 @@
                 </div>
                 <div class="form-group" style="margin-bottom:14px;">
                     <label for="details-url">
-                        URL 
+
+                                                URL 
+                                                
                         <span style="color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">(optional)</span>
                     </label>
                     <input type="text" id="details-url" style="width:100%;" placeholder="https://…">
@@ -1859,7 +1891,9 @@
             <!-- Deadline -->
             <div class="form-group" style="margin:14px 0 10px;">
                 <label for="notes-modal-deadline" style="font-size:11px;">
-                    Deadline 
+
+                                        Deadline 
+                                        
                     <span style="color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">(optional)</span>
                 </label>
                 <input type="date" id="notes-modal-deadline" style="width:100%;" onchange="autoSaveDeadline()">
@@ -1869,7 +1903,9 @@
             <div style="margin-bottom:14px;">
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
                     <label style="font-size:11px;margin-bottom:0;">
-                        Checklist 
+
+                                                Checklist 
+                                                
                         <span id="checklist-count" style="color:var(--text3);font-weight:400;font-family:'DM Mono',monospace;"></span>
                     </label>
                     <button id="checklist-add-toggle" onclick="toggleChecklistAddField()" style="background:none;border:none;color:var(--accent);font-size:11px;cursor:pointer;font-family:'DM Sans',sans-serif;padding:0;">+ Add item</button>
@@ -1925,8 +1961,10 @@
                         <polyline points="20 6 9 17 4 12"></polyline>
                     </svg>
 
-                            Mark Complete
-                          
+
+                                                Mark Complete
+                                              
+                                    
                 </button>
             </div>
         </div>
@@ -2097,9 +2135,9 @@
             const row = document.createElement('div');
             row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:4px 0;';
             row.innerHTML = `
-                  <input type="checkbox" ${item.done ? 'checked' : ''} style="width:15px;height:15px;cursor:pointer;accent-color:var(--accent);flex-shrink:0;">
-                  <span style="flex:1;font-size:13px;${item.done ? 'text-decoration:line-through;color:var(--text3);' : ''}">${escHtml(item.text)}</span>
-                  <button style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:12px;padding:2px 5px;border-radius:4px;" title="Remove" onclick="removeChecklistItem(${idx})">✕</button>`;
+                              <input type="checkbox" ${item.done ? 'checked' : ''} style="width:15px;height:15px;cursor:pointer;accent-color:var(--accent);flex-shrink:0;">
+                              <span style="flex:1;font-size:13px;${item.done ? 'text-decoration:line-through;color:var(--text3);' : ''}">${escHtml(item.text)}</span>
+                              <button style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:12px;padding:2px 5px;border-radius:4px;" title="Remove" onclick="removeChecklistItem(${idx})">✕</button>`;
             row.querySelector('input').addEventListener('change', () => toggleChecklistItem(idx));
             container.appendChild(row);
         });
@@ -2480,13 +2518,13 @@
                 const colEl = document.createElement('div');
                 colEl.className = `kanban-col ${col.cls}`;
                 colEl.innerHTML = `
-                        <div class="kanban-col-header">
-                          <div class="col-title"><div class="col-dot"></div>${col.status}</div>
-                          <div class="col-count">${projects.length}</div>
-                        </div>
-                        <div class="kanban-cards" id="col-${col.status.replace(/\W+/g, '-')}">
-                          ${projects.length === 0 ? '<div class="kanban-empty">Empty</div>' : ''}
-                        </div>`;
+                                        <div class="kanban-col-header">
+                                          <div class="col-title"><div class="col-dot"></div>${col.status}</div>
+                                          <div class="col-count">${projects.length}</div>
+                                        </div>
+                                        <div class="kanban-cards" id="col-${col.status.replace(/\W+/g, '-')}">
+                                          ${projects.length === 0 ? '<div class="kanban-empty">Empty</div>' : ''}
+                                        </div>`;
                 rowEl.appendChild(colEl);
 
                 // ── Drop target handlers ──
@@ -2554,18 +2592,18 @@
         }
 
         card.innerHTML = `
-            <div class="card-name" style="cursor:pointer;display:flex;align-items:center;gap:4px;">
-              <span class="card-name-text">${escHtml(project.name)}</span>
-              ${projectUrl ? `<button class="card-action-btn link-btn" title="Open link" style="flex-shrink:0;padding:2px 4px;font-size:11px;color:var(--text3);">
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-              </button>` : ''}
-            </div>
-            <div class="card-actions">
-              ${deadlineDisplay ? `<span class="card-deadline" style="color:${deadlineColor}">${deadlineDisplay}</span>` : ''}
-              <button class="card-action-btn notes-btn ${hasNote ? 'has-notes' : ''}" title="${hasNote ? 'View/edit note' : 'Add note'}">🛈</button>
-              <button class="card-action-btn done-btn" title="Mark complete">✓</button>
-              <button class="card-action-btn delete-btn" title="Remove project">✕</button>
-            </div>`;
+                    <div class="card-name" style="cursor:pointer;display:flex;align-items:center;gap:4px;">
+                      <span class="card-name-text">${escHtml(project.name)}</span>
+                      ${projectUrl ? `<button class="card-action-btn link-btn" title="Open link" style="flex-shrink:0;padding:2px 4px;font-size:11px;color:var(--text3);">
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                      </button>` : ''}
+                    </div>
+                    <div class="card-actions">
+                      ${deadlineDisplay ? `<span class="card-deadline" style="color:${deadlineColor}">${deadlineDisplay}</span>` : ''}
+                      <button class="card-action-btn notes-btn ${hasNote ? 'has-notes' : ''}" title="${hasNote ? 'View/edit note' : 'Add note'}">🛈</button>
+                      <button class="card-action-btn done-btn" title="Mark complete">✓</button>
+                      <button class="card-action-btn delete-btn" title="Remove project">✕</button>
+                    </div>`;
 
         if (isFocused)
             card.classList.add('focused');
@@ -3095,8 +3133,8 @@
         if (match) {
             el.style.display = 'block';
             el.innerHTML = `<span class="suggest-tag" onclick="document.getElementById('add-category').value='${match}'; this.parentElement.style.display='none';">
-                  ✦ Suggested: ${match}
-                </span>`;
+                              ✦ Suggested: ${match}
+                            </span>`;
         } else {
             el.style.display = 'none';
         }
@@ -3159,30 +3197,30 @@
             return;
         }
         wrap.innerHTML = `
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Project Name</th>
-                  <th>Category</th>
-                  <th>Major Project</th>
-                  <th>Department / Campus</th>
-                  <th>Month Completed</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${filtered.map(p => `
-                  <tr>
-                    <td>
-                      <span style="display:inline-block;width:18px;text-align:center;color:var(--accent);font-size:13px;">${p.starred ? '★' : ''}</span>
-                      ${escHtml(p.name)}
-                    </td>
-                    <td><span class="pill pill-cat">${escHtml(p.category)}</span></td>
-                    <td><span class="pill pill-maj">${escHtml(p.major)}</span></td>
-                    <td><span style="font-size:12px;color:var(--text2)">${escHtml(p.department || '')}</span></td>
-                    <td><span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text2)">${escHtml(p.month)}</span></td>
-                  </tr>`).join('')}
-              </tbody>
-            </table>`;
+                    <table class="data-table">
+                      <thead>
+                        <tr>
+                          <th>Project Name</th>
+                          <th>Category</th>
+                          <th>Major Project</th>
+                          <th>Department / Campus</th>
+                          <th>Month Completed</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        ${filtered.map(p => `
+                          <tr>
+                            <td>
+                              <span style="display:inline-block;width:18px;text-align:center;color:var(--accent);font-size:13px;">${p.starred ? '★' : ''}</span>
+                              ${escHtml(p.name)}
+                            </td>
+                            <td><span class="pill pill-cat">${escHtml(p.category)}</span></td>
+                            <td><span class="pill pill-maj">${escHtml(p.major)}</span></td>
+                            <td><span style="font-size:12px;color:var(--text2)">${escHtml(p.department || '')}</span></td>
+                            <td><span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text2)">${escHtml(p.month)}</span></td>
+                          </tr>`).join('')}
+                      </tbody>
+                    </table>`;
     }
 
     function downloadCSV() {
@@ -3239,16 +3277,16 @@
         card.className = 'chart-card';
         const max = data.length ? Math.max(...data.map(d => d[1])) : 1;
         card.innerHTML = `
-            <h3>${title}</h3>
-            <div class="chart-inner">
-              ${data.map(([label, count], i) => {const pct = Math.round((count / max) * 100);const grad = `linear-gradient(90deg, ${colorA}, ${colorB})`;return `<div class="bar-row">
-                      <div class="bar-label" title="${escHtml(label)}">${escHtml(label)}</div>
-                      <div class="bar-track">
-                        <div class="bar-fill" style="width:${pct}%;background:${grad};opacity:${0.6 + 0.4 * (i === 0 ? 1 : count / max)}"></div>
-                      </div>
-                      <div class="bar-value">${count}</div>
-                    </div>`;}).join('')}
-            </div>`;
+                    <h3>${title}</h3>
+                    <div class="chart-inner">
+                      ${data.map(([label, count], i) => {const pct = Math.round((count / max) * 100);const grad = `linear-gradient(90deg, ${colorA}, ${colorB})`;return `<div class="bar-row">
+                                  <div class="bar-label" title="${escHtml(label)}">${escHtml(label)}</div>
+                                  <div class="bar-track">
+                                    <div class="bar-fill" style="width:${pct}%;background:${grad};opacity:${0.6 + 0.4 * (i === 0 ? 1 : count / max)}"></div>
+                                  </div>
+                                  <div class="bar-value">${count}</div>
+                                </div>`;}).join('')}
+                    </div>`;
         return card;
     }
 
@@ -3450,9 +3488,9 @@
             row.className = 'settings-item';
             row.dataset.idx = idx;
             row.innerHTML = `
-                  <span class="settings-item-name">${escHtml(item)}</span>
-                  <button class="settings-item-btn edit" title="Rename" onclick="startEdit(this,'${type}',${idx})">✎</button>
-                  <button class="settings-item-btn delete" title="Delete" onclick="deleteItem('${type}',${idx})">✕</button>`;
+                              <span class="settings-item-name">${escHtml(item)}</span>
+                              <button class="settings-item-btn edit" title="Rename" onclick="startEdit(this,'${type}',${idx})">✎</button>
+                              <button class="settings-item-btn delete" title="Delete" onclick="deleteItem('${type}',${idx})">✕</button>`;
             el.appendChild(row);
         });
     }
@@ -3492,9 +3530,9 @@
         const row = btn.closest('.settings-item');
         const current = getList(type)[idx];
         row.innerHTML = `
-            <input class="edit-input" type="text" value="${escHtml(current)}">
-            <button class="settings-item-btn save"   onclick="saveEdit(this,'${type}',${idx})">✓</button>
-            <button class="settings-item-btn cancel" onclick="renderSettingsLists()">✕</button>`;
+                    <input class="edit-input" type="text" value="${escHtml(current)}">
+                    <button class="settings-item-btn save"   onclick="saveEdit(this,'${type}',${idx})">✓</button>
+                    <button class="settings-item-btn cancel" onclick="renderSettingsLists()">✕</button>`;
         const input = row.querySelector('input');
         input.focus();
         input.select();
