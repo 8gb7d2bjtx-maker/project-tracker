@@ -2017,6 +2017,48 @@
             MONTHS.push(`${MONTH_NAMES[m]} ${y}`);
     }
 
+    // The "Month/Year Completed" column sometimes comes back as a real date
+    // (e.g. "7/1/2025") instead of the text label the charts expect
+    // (e.g. "July 2025") — depends on how the cell was entered/edited in
+    // Sheets. Normalize everything to "Month YYYY" so the Summary tab's
+    // month chart (which matches against the MONTHS list above) doesn't
+    // silently drop rows that are in date form.
+    function normalizeMonthLabel(raw) {
+        if (!raw)
+            return '';
+        const s = String(raw).trim();
+        // Already "Month YYYY" text form
+        const textMatch = s.match(/^([A-Za-z]+)\s+(\d{4})$/);
+        if (textMatch) {
+            const idx = MONTH_NAMES.findIndex(m => m.toLowerCase() === textMatch[1].toLowerCase());
+            if (idx !== -1)
+                return `${MONTH_NAMES[idx]} ${textMatch[2]}`;
+        }
+        // Numeric date like "7/1/2025", "07/01/2025", "7/1/25"
+        const dateMatch = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
+        if (dateMatch) {
+            const month = parseInt(dateMatch[1], 10);
+            let year = dateMatch[3];
+            if (year.length === 2)
+                year = (parseInt(year, 10) < 50 ? '20' : '19') + year;
+            if (month >= 1 && month <= 12)
+                return `${MONTH_NAMES[month - 1]} ${year}`;
+        }
+        // ISO-style "2025-07-01"
+        const isoMatch = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
+        if (isoMatch) {
+            const year = isoMatch[1];
+            const month = parseInt(isoMatch[2], 10);
+            if (month >= 1 && month <= 12)
+                return `${MONTH_NAMES[month - 1]} ${year}`;
+        }
+        // Last resort — let the browser try to parse it
+        const parsed = new Date(s);
+        if (!isNaN(parsed.getTime()))
+            return `${MONTH_NAMES[parsed.getMonth()]} ${parsed.getFullYear()}`;
+        return s; // unrecognized — leave as-is rather than silently dropping it
+    }
+
     // ── INIT ─────────────────────────────────────────────────────────
     document.addEventListener('DOMContentLoaded', async () => {
         // Set header icon from the embedded apple-touch-icon PNG
@@ -2378,7 +2420,7 @@
             completedProjects = dataRows.map(r => ({
                 name: r[0] || '',
                 category: r[1] || '',
-                month: r[2] || '',
+                month: normalizeMonthLabel(r[2] || ''),
                 major: r[3] || '',
                 department: r[4] || '',
                 starred: String(r[5] || '').toUpperCase() === 'TRUE',
