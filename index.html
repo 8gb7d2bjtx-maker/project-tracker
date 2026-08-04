@@ -1751,12 +1751,12 @@
                                                         Bookmarks
                                                     
                         </h2>
-                        <div class="settings-add-row" style="flex-wrap:wrap;">
+                        <div class="settings-list" id="bookmarks-list"></div>
+                        <div class="settings-add-row" style="flex-wrap:wrap;margin-top:10px;">
                             <input type="text" id="new-bookmark-label" placeholder="Label…" style="flex:1 1 100%;margin-bottom:6px;">
                             <input type="text" id="new-bookmark-url" placeholder="URL…" style="flex:1;">
                             <button onclick="addBookmark()">Add</button>
                         </div>
-                        <div class="settings-list" id="bookmarks-list"></div>
                     </div>
 
                     <!-- Quick Notes -->
@@ -3586,6 +3586,8 @@
         await saveSheetList('saveBookmarks', 'bookmarks', bookmarks);
     }
 
+    let bookmarkDragSrcIdx = null;
+
     function renderBookmarksList() {
         const el = document.getElementById('bookmarks-list');
         el.innerHTML = '';
@@ -3596,9 +3598,39 @@
         bookmarks.forEach((b, idx) => {
             const row = document.createElement('div');
             row.className = 'settings-item';
+            row.draggable = true;
+            row.style.cursor = 'grab';
             row.innerHTML = `
+                                          <span style="color:var(--text3);font-size:13px;margin-right:2px;flex-shrink:0;user-select:none;">⠿</span>
                                           <a href="${escHtml(b.url)}" target="_blank" rel="noopener" class="settings-item-name" style="color:var(--accent);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(b.label)}</a>
                                           <button class="settings-item-btn delete" title="Delete" onclick="deleteBookmark(${idx})">✕</button>`;
+
+            row.addEventListener('dragstart', () => {
+                bookmarkDragSrcIdx = idx;
+                row.style.opacity = '0.4';
+            });
+            row.addEventListener('dragend', () => {
+                row.style.opacity = '1';
+            });
+            row.addEventListener('dragover', e => {
+                e.preventDefault();
+                row.style.borderTop = '2px solid var(--accent)';
+            });
+            row.addEventListener('dragleave', () => {
+                row.style.borderTop = '';
+            });
+            row.addEventListener('drop', e => {
+                e.preventDefault();
+                row.style.borderTop = '';
+                if (bookmarkDragSrcIdx === null || bookmarkDragSrcIdx === idx)
+                    return;
+                const moved = bookmarks.splice(bookmarkDragSrcIdx, 1)[0];
+                bookmarks.splice(idx, 0, moved);
+                bookmarkDragSrcIdx = null;
+                saveBookmarksList();
+                renderBookmarksList();
+            });
+
             el.appendChild(row);
         });
     }
