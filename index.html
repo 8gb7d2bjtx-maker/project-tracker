@@ -2701,6 +2701,27 @@
         });
     }
 
+    // Remove a single card without rebuilding the whole board — used by
+    // delete so it doesn't pay the cost of a full re-render for a
+    // one-card change.
+    function removeCardFromBoard(projectName) {
+        document.querySelectorAll('.project-card').forEach(el => {
+            const nameEl = el.querySelector('.card-name-text');
+            if (!nameEl || nameEl.textContent !== projectName)
+                return;
+            const col = el.closest('.kanban-col');
+            el.remove();
+            if (col) {
+                const cardsEl = col.querySelector('.kanban-cards');
+                const countEl = col.querySelector('.col-count');
+                if (countEl)
+                    countEl.textContent = cardsEl.children.length;
+                if (cardsEl && cardsEl.children.length === 0)
+                    cardsEl.innerHTML = '<div class="kanban-empty">Empty</div>';
+            }
+        });
+    }
+
     function createCard(project) {
         const card = document.createElement('div');
         card.className = 'project-card';
@@ -2796,7 +2817,7 @@
                 focusedCards.delete(project.name);
                 saveFocusedCards();
                 updateCountsAndMeta();
-                renderKanban();
+                removeCardFromBoard(project.name);
                 showToast(`"${project.name}" removed`, 'success');
             } catch (err) {
                 showToast('Could not remove project — try again', 'error');
@@ -3174,7 +3195,6 @@
             activeProjects = activeProjects.filter(p => p.name !== currentModalProject?.name);
             document.getElementById('count-active').textContent = activeProjects.length;
             renderKanban();
-            setTimeout(() => fetchAllData(), 2500);
         } catch (e) {
             showToast(`Could not complete project: ${e.message}`, 'error');
         } finally {
@@ -3230,18 +3250,30 @@
                 mode: 'no-cors'
             });
 
-            // Update local maps immediately so card renders correctly before refresh
+            // Update local state immediately instead of waiting on a
+            // delayed re-fetch — Google's CSV export can lag a live edit
+            // by more than a couple seconds, so relying on a re-fetch to
+            // surface the new card meant it could take a while (or get
+            // silently dropped if a stale export came back first).
             if (note)
                 notesMap[name] = note;
             if (deadline)
                 deadlinesMap[name] = deadline;
             if (urlVal)
                 urlsMap[name] = urlVal;
+            activeProjects.push({
+                name,
+                status,
+                category: cat,
+                major,
+                department
+            });
 
             showToast(`"${name}" added successfully!`, 'success');
             resetAddForm();
             toggleAddPanel();
-            setTimeout(() => fetchActiveProjects(), 2500);
+            updateCountsAndMeta();
+            renderKanban();
         } catch (e) {
             showToast('Submission failed — check connection', 'error');
         } finally {
