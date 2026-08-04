@@ -3493,14 +3493,48 @@
         }
     }
 
+    // Queue writes per-action so overlapping saves can't complete out of
+    // order and clobber each other (e.g. adding two quick notes back to
+    // back). Each queued save still reads the list at the moment it
+    // actually runs, so it picks up anything added while it was waiting.
+    const saveQueues = {};
     async function saveSheetList(action, paramName, list) {
-        const url = `${APPS_SCRIPT_URL}?action=${action}&${paramName}=${encodeURIComponent(JSON.stringify(list))}`;
-        try {
-            await fetch(url, {
-                mode: 'no-cors'
-            });
-        } catch (e) {
-            showToast(`Could not save ${paramName} — try again`, 'error');
+        const prev = saveQueues[action] || Promise.resolve();
+        const run = prev.then(async () => {
+            const url = `${APPS_SCRIPT_URL}?action=${action}&${paramName}=${encodeURIComponent(JSON.stringify(list))}`;
+            try {
+                await fetch(url, {
+                    mode: 'no-cors'
+                });
+            } catch (e) {
+                showToast(`Could not save ${paramName} — try again`, 'error');
+            }
+        });
+        saveQueues[action] = run;
+        return run;
+    }
+
+    // Shared reader for Apps Script GET actions, with a longer timeout and
+    // a couple retries — Apps Script can take a while to spin up after
+    // being idle ("cold start"), which is what was causing Departments,
+    // Bookmarks, and Quick Notes to sometimes come back empty on load.
+    async function fetchAppsScriptJSON(action, timeoutMs=15000, retries=2) {
+        for (let attempt = 0; attempt <= retries; attempt++) {
+            try {
+                const controller = new AbortController();
+                const timeout = setTimeout(() => controller.abort(), timeoutMs);
+                const res = await fetch(`${APPS_SCRIPT_URL}?action=${action}`, {
+                    signal: controller.signal
+                });
+                clearTimeout(timeout);
+                return await res.json();
+            } catch (e) {
+                if (attempt === retries) {
+                    console.error(`Could not load ${action} after ${retries + 1} attempts:`, e);
+                    return null;
+                }
+                await new Promise(r => setTimeout(r, 700 * (attempt + 1)));
+            }
         }
     }
 
@@ -3544,19 +3578,9 @@
     }
 
     async function fetchDepartments() {
-        try {
-            const controller = new AbortController();
-            const timeout = setTimeout(() => controller.abort(), 8000);
-            const res = await fetch(`${APPS_SCRIPT_URL}?action=getDepartments`, {
-                signal: controller.signal
-            });
-            clearTimeout(timeout);
-            const data = await res.json();
-            if (data.departments && data.departments.length > 0)
-                departments = data.departments;
-        } catch (e) {
-            console.error('Could not load departments:', e);
-        }
+        const data = await fetchAppsScriptJSON('getDepartments');
+        if (data && data.departments && data.departments.length > 0)
+            departments = data.departments;
     }
 
     async function saveDepartments() {
@@ -3567,19 +3591,9 @@
     let bookmarks = [];
 
     async function fetchBookmarks() {
-        try {
-            const controller = new AbortController();
-            const timeout = setTimeout(() => controller.abort(), 8000);
-            const res = await fetch(`${APPS_SCRIPT_URL}?action=getBookmarks`, {
-                signal: controller.signal
-            });
-            clearTimeout(timeout);
-            const data = await res.json();
-            if (data.bookmarks)
-                bookmarks = data.bookmarks;
-        } catch (e) {
-            console.error('Could not load bookmarks:', e);
-        }
+        const data = await fetchAppsScriptJSON('getBookmarks');
+        if (data && data.bookmarks)
+            bookmarks = data.bookmarks;
     }
 
     async function saveBookmarksList() {
@@ -3667,19 +3681,9 @@
     let quickNotes = [];
 
     async function fetchQuickNotes() {
-        try {
-            const controller = new AbortController();
-            const timeout = setTimeout(() => controller.abort(), 8000);
-            const res = await fetch(`${APPS_SCRIPT_URL}?action=getQuickNotes`, {
-                signal: controller.signal
-            });
-            clearTimeout(timeout);
-            const data = await res.json();
-            if (data.notes)
-                quickNotes = data.notes;
-        } catch (e) {
-            console.error('Could not load quick notes:', e);
-        }
+        const data = await fetchAppsScriptJSON('getQuickNotes');
+        if (data && data.notes)
+            quickNotes = data.notes;
     }
 
     async function saveQuickNotesList() {
