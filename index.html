@@ -3186,13 +3186,33 @@
             if (data.error)
                 throw new Error(data.error);
 
-            showToast(`"${currentModalProject.name}" marked complete!`, 'success');
-            focusedCards.delete(currentModalProject.name);
+            const projectName = currentModalProject.name;
+
+            showToast(`"${projectName}" marked complete!`, 'success');
+            focusedCards.delete(projectName);
             saveFocusedCards();
             closeModal();
-            activeProjects = activeProjects.filter(p => p.name !== currentModalProject?.name);
+
+            // Remove from the active board
+            activeProjects = activeProjects.filter(p => p.name !== projectName);
             document.getElementById('count-active').textContent = activeProjects.length;
             renderKanban();
+
+            // Add straight to the Completed tab's local data too, instead
+            // of waiting on a re-fetch — mirrors exactly what the sheet
+            // now has, since these are the same fields just written.
+            completedProjects.push({
+                name: projectName,
+                category: cat,
+                month,
+                major,
+                department,
+                starred
+            });
+            document.getElementById('count-completed').textContent = completedProjects.length;
+            populateCompletedFilters();
+            renderCompletedTable();
+            renderSummary();
         } catch (e) {
             showToast(`Could not complete project: ${e.message}`, 'error');
         } finally {
