@@ -2941,8 +2941,7 @@
         `&url=${encodeURIComponent(urlVal)}`;
 
         try {
-            const res = await fetch(url);
-            const data = await res.json();
+            const data = await fetchAppsScriptJSONWithRetry(url);
             if (data.error)
                 throw new Error(data.error);
 
@@ -3183,8 +3182,7 @@
         `&starred=${starred}`;
 
         try {
-            const res = await fetch(url);
-            const data = await res.json();
+            const data = await fetchAppsScriptJSONWithRetry(url);
             if (data.error)
                 throw new Error(data.error);
 
@@ -3570,6 +3568,34 @@
         }
     }
 
+    // Same idea as fetchAppsScriptJSON, but for write actions that return
+    // a JSON confirmation (completeProject, editProject, archiveYear).
+    // Those all build their own full URL with params, so this takes a
+    // ready-made URL rather than an action name. Re-throws after
+    // exhausting retries so the caller's own catch/error-message logic
+    // still runs — this only smooths over the transient "Apps Script
+    // was slow and the response got cut off" case, not real failures.
+    async function fetchAppsScriptJSONWithRetry(url, timeoutMs=15000, retries=2) {
+        let lastErr;
+        for (let attempt = 0; attempt <= retries; attempt++) {
+            try {
+                const controller = new AbortController();
+                const timeout = setTimeout(() => controller.abort(), timeoutMs);
+                const res = await fetch(url, {
+                    signal: controller.signal
+                });
+                clearTimeout(timeout);
+                return await res.json();
+            } catch (e) {
+                lastErr = e;
+                if (attempt === retries)
+                    break;
+                await new Promise(r => setTimeout(r, 700 * (attempt + 1)));
+            }
+        }
+        throw lastErr;
+    }
+
     // Wrapper objects so fetchSheetList can mutate by reference
     const catRef = {
         get arr() {
@@ -3807,8 +3833,7 @@
 
         try {
             const url = `${APPS_SCRIPT_URL}?action=archiveYear&year=${encodeURIComponent(yearLabel)}`;
-            const res = await fetch(url);
-            const data = await res.json();
+            const data = await fetchAppsScriptJSONWithRetry(url);
 
             if (data.error) {
                 statusEl.textContent = `Error: ${data.error}`;
