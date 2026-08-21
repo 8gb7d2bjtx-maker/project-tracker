@@ -1403,7 +1403,7 @@
         margin-bottom: 16px;
     }
 
-    .settings-add-row input {
+    .settings-add-row input, .settings-add-row textarea {
         flex: 1;
         background: var(--surface2);
         border: 1px solid var(--border);
@@ -1416,7 +1416,14 @@
         transition: border-color var(--transition);
     }
 
-    .settings-add-row input:focus {
+    .settings-add-row textarea {
+        resize: none;
+        overflow: hidden;
+        line-height: 1.4;
+        max-height: 160px;
+    }
+
+    .settings-add-row input:focus, .settings-add-row textarea:focus {
         border-color: var(--accent);
     }
 
@@ -1540,7 +1547,9 @@
                 <button class="tab-btn active" data-tab="active">
 
 
-                                                            Projects 
+
+                                                                                Projects 
+                                                                                
                                                             
                                         
                     <span class="tab-count" id="count-active">—</span>
@@ -1548,7 +1557,9 @@
                 <button class="tab-btn" data-tab="completed">
 
 
-                                                            Completed 
+
+                                                                                Completed 
+                                                                                
                                                             
                                         
                     <span class="tab-count" id="count-completed">—</span>
@@ -1558,7 +1569,9 @@
                 <button class="tab-btn" data-tab="settings">
 
 
-                                                            ⚙ 
+
+                                                                                ⚙ 
+                                                                                
                                                             
                                         
                     <span class="settings-label">Settings</span>
@@ -1592,7 +1605,9 @@
                             <div class="spinner"></div>
 
 
-                                                                                    Loading projects…
+
+                                                                                                                Loading projects…
+                                                                                                            
                                                                                 
                                                     
                         </div>
@@ -1641,7 +1656,9 @@
                                 <label for="add-notes">
 
 
-                                                                                                            Notes 
+
+                                                                                                                                                Notes 
+                                                                                                                                                
                                                                                                             
                                                                         
                                     <span style="color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">(optional)</span>
@@ -1652,7 +1669,9 @@
                                 <label for="add-deadline">
 
 
-                                                                                                            Deadline 
+
+                                                                                                                                                Deadline 
+                                                                                                                                                
                                                                                                             
                                                                         
                                     <span style="color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">(optional)</span>
@@ -1663,7 +1682,9 @@
                                 <label for="add-url">
 
 
-                                                                                                            URL 
+
+                                                                                                                                                URL 
+                                                                                                                                                
                                                                                                             
                                                                         
                                     <span style="color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">(optional)</span>
@@ -1677,8 +1698,10 @@
 
 
 
-                                                                                                              Add Project to Sheet
-                                                                                                            
+
+                                                                                                                                              Add Project to Sheet
+                                                                                                                                            
+                                                                                                                            
                                                                                             
                                                             
                             </button>
@@ -1715,8 +1738,10 @@
 
 
 
-                                                                                  Export CSV
-                                                                                
+
+                                                                                                          Export CSV
+                                                                                                        
+                                                                                            
                                                                     
                                             
                     </button>
@@ -1728,7 +1753,9 @@
                                 <div class="spinner"></div>
 
 
-                                                                                                Loading…
+
+                                                                                                                                Loading…
+                                                                                                                            
                                                                                             
                                                             
                             </div>
@@ -1748,7 +1775,9 @@
                                 <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"/>
                             </svg>
 
-                                                        Bookmarks
+
+                                                                                    Bookmarks
+                                                                                
                                                     
                         </h2>
                         <div class="settings-list" id="bookmarks-list"></div>
@@ -1767,11 +1796,13 @@
                                 <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4z"/>
                             </svg>
 
-                                                        Quick Notes
+
+                                                                                    Quick Notes
+                                                                                
                                                     
                         </h2>
                         <div class="settings-add-row">
-                            <input type="text" id="new-quicknote-input" placeholder="Jot something down…" style="flex:1;">
+                            <textarea id="new-quicknote-input" placeholder="Jot something down…" rows="1" style="flex:1;"></textarea>
                             <button onclick="addQuickNote()">Add</button>
                         </div>
                         <div class="settings-list" id="quicknotes-list" style="max-height:460px;overflow-y:auto;"></div>
@@ -1793,7 +1824,9 @@
                         <div class="spinner"></div>
 
 
-                                                                        Loading data…
+
+                                                                                                Loading data…
+                                                                                            
                                                                     
                                             
                     </div>
@@ -1815,8 +1848,10 @@
 
 
 
-                                                                                                Categories
-                                                                                              
+
+                                                                                                                            Categories
+                                                                                                                          
+                                                                                                            
                                                                                 
                                                     
                         </h2>
@@ -1838,8 +1873,10 @@
 
 
 
-                                                                                                Major Projects
-                                                                                              
+
+                                                                                                                            Major Projects
+                                                                                                                          
+                                                                                                            
                                                                                 
                                                     
                         </h2>
@@ -1860,8 +1897,10 @@
 
 
 
-                                                                                                Departments / Campuses
-                                                                                              
+
+                                                                                                                            Departments / Campuses
+                                                                                                                          
+                                                                                                            
                                                                                 
                                                     
                         </h2>
@@ -1884,21 +1923,23 @@
 
 
 
-                                                                                                            Archive Year
 
+                                                                                                                                            Archive Year
+
+                                                                                                                            
                                                                                             
                                                             
                             </h2>
                             <p style="font-size:12px;color:var(--text2);margin-bottom:16px;line-height:1.6;">
-                                                                                                At the end of each school year (June), archive completed projects to a new tab. This clears the Completed tab for the new year while preserving all historical data.
-                                                                                              </p>
+                                                                                                                            At the end of each school year (June), archive completed projects to a new tab. This clears the Completed tab for the new year while preserving all historical data.
+                                                                                                                          </p>
                             <div class="form-group" style="margin-bottom:14px;">
                                 <label for="archive-year-input">School Year Label</label>
                                 <input type="text" id="archive-year-input" placeholder="e.g. 2025-2026" style="width:100%;">
                             </div>
                             <button onclick="archiveYear()" style="background:var(--red);border:none;color:#fff;border-radius:var(--radius);padding:9px 16px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;width:100%;transition:background 0.18s ease;" onmouseover="this.style.background='#c0392b'" onmouseout="this.style.background='var(--red)'">
-                                                                                                Archive &amp; Reset Completed Projects
-                                                                                              </button>
+                                                                                                                            Archive &amp; Reset Completed Projects
+                                                                                                                          </button>
                             <div id="archive-status" style="font-size:12px;margin-top:10px;font-family:'DM Mono',monospace;min-height:18px;"></div>
                         </div>
 
@@ -1959,7 +2000,9 @@
                     <label for="details-url">
 
 
-                                                                        URL 
+
+                                                                                                URL 
+                                                                                                
                                                                         
                                                 
                         <span style="color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">(optional)</span>
@@ -1975,7 +2018,9 @@
                 <label for="notes-modal-deadline" style="font-size:11px;">
 
 
-                                                            Deadline 
+
+                                                                                Deadline 
+                                                                                
                                                             
                                         
                     <span style="color:var(--text3);font-weight:400;text-transform:none;letter-spacing:0">(optional)</span>
@@ -1989,7 +2034,9 @@
                     <label style="font-size:11px;margin-bottom:0;">
 
 
-                                                                        Checklist 
+
+                                                                                                Checklist 
+                                                                                                
                                                                         
                                                 
                         <span id="checklist-count" style="color:var(--text3);font-weight:400;font-family:'DM Mono',monospace;"></span>
@@ -2049,8 +2096,10 @@
 
 
 
-                                                                    Mark Complete
-                                                                  
+
+                                                                                        Mark Complete
+                                                                                      
+                                                                            
                                                         
                                     
                 </button>
@@ -2267,9 +2316,9 @@
             const row = document.createElement('div');
             row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:4px 0;';
             row.innerHTML = `
-                                          <input type="checkbox" ${item.done ? 'checked' : ''} style="width:15px;height:15px;cursor:pointer;accent-color:var(--accent);flex-shrink:0;">
-                                          <span style="flex:1;font-size:13px;${item.done ? 'text-decoration:line-through;color:var(--text3);' : ''}">${escHtml(item.text)}</span>
-                                          <button style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:12px;padding:2px 5px;border-radius:4px;" title="Remove" onclick="removeChecklistItem(${idx})">✕</button>`;
+                                                      <input type="checkbox" ${item.done ? 'checked' : ''} style="width:15px;height:15px;cursor:pointer;accent-color:var(--accent);flex-shrink:0;">
+                                                      <span style="flex:1;font-size:13px;${item.done ? 'text-decoration:line-through;color:var(--text3);' : ''}">${escHtml(item.text)}</span>
+                                                      <button style="background:none;border:none;color:var(--text3);cursor:pointer;font-size:12px;padding:2px 5px;border-radius:4px;" title="Remove" onclick="removeChecklistItem(${idx})">✕</button>`;
             row.querySelector('input').addEventListener('change', () => toggleChecklistItem(idx));
             container.appendChild(row);
         });
@@ -2652,13 +2701,13 @@
                 const colEl = document.createElement('div');
                 colEl.className = `kanban-col ${col.cls}`;
                 colEl.innerHTML = `
-                                                        <div class="kanban-col-header">
-                                                          <div class="col-title"><div class="col-dot"></div>${col.status}</div>
-                                                          <div class="col-count">${projects.length}</div>
-                                                        </div>
-                                                        <div class="kanban-cards" id="col-${col.status.replace(/\W+/g, '-')}">
-                                                          ${projects.length === 0 ? '<div class="kanban-empty">Empty</div>' : ''}
-                                                        </div>`;
+                                                                        <div class="kanban-col-header">
+                                                                          <div class="col-title"><div class="col-dot"></div>${col.status}</div>
+                                                                          <div class="col-count">${projects.length}</div>
+                                                                        </div>
+                                                                        <div class="kanban-cards" id="col-${col.status.replace(/\W+/g, '-')}">
+                                                                          ${projects.length === 0 ? '<div class="kanban-empty">Empty</div>' : ''}
+                                                                        </div>`;
                 rowEl.appendChild(colEl);
 
                 // ── Drop target handlers ──
@@ -2747,18 +2796,18 @@
         }
 
         card.innerHTML = `
-                            <div class="card-name" style="cursor:pointer;display:flex;align-items:center;gap:4px;">
-                              <span class="card-name-text">${escHtml(project.name)}</span>
-                              ${projectUrl ? `<button class="card-action-btn link-btn" title="Open link" style="flex-shrink:0;padding:2px 4px;font-size:11px;color:var(--text3);">
-                                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-                              </button>` : ''}
-                            </div>
-                            <div class="card-actions">
-                              ${deadlineDisplay ? `<span class="card-deadline" style="color:${deadlineColor}">${deadlineDisplay}</span>` : ''}
-                              <button class="card-action-btn notes-btn ${hasNote ? 'has-notes' : ''}" title="${hasNote ? 'View/edit note' : 'Add note'}">🛈</button>
-                              <button class="card-action-btn done-btn" title="Mark complete">✓</button>
-                              <button class="card-action-btn delete-btn" title="Remove project">✕</button>
-                            </div>`;
+                                    <div class="card-name" style="cursor:pointer;display:flex;align-items:center;gap:4px;">
+                                      <span class="card-name-text">${escHtml(project.name)}</span>
+                                      ${projectUrl ? `<button class="card-action-btn link-btn" title="Open link" style="flex-shrink:0;padding:2px 4px;font-size:11px;color:var(--text3);">
+                                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                                      </button>` : ''}
+                                    </div>
+                                    <div class="card-actions">
+                                      ${deadlineDisplay ? `<span class="card-deadline" style="color:${deadlineColor}">${deadlineDisplay}</span>` : ''}
+                                      <button class="card-action-btn notes-btn ${hasNote ? 'has-notes' : ''}" title="${hasNote ? 'View/edit note' : 'Add note'}">🛈</button>
+                                      <button class="card-action-btn done-btn" title="Mark complete">✓</button>
+                                      <button class="card-action-btn delete-btn" title="Remove project">✕</button>
+                                    </div>`;
 
         if (isFocused)
             card.classList.add('focused');
@@ -3317,8 +3366,8 @@
         if (match) {
             el.style.display = 'block';
             el.innerHTML = `<span class="suggest-tag" onclick="document.getElementById('add-category').value='${match}'; this.parentElement.style.display='none';">
-                                          ✦ Suggested: ${match}
-                                        </span>`;
+                                                      ✦ Suggested: ${match}
+                                                    </span>`;
         } else {
             el.style.display = 'none';
         }
@@ -3381,30 +3430,30 @@
             return;
         }
         wrap.innerHTML = `
-                            <table class="data-table">
-                              <thead>
-                                <tr>
-                                  <th>Project Name</th>
-                                  <th>Category</th>
-                                  <th>Major Project</th>
-                                  <th>Department / Campus</th>
-                                  <th>Month Completed</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                ${filtered.map(p => `
-                                  <tr>
-                                    <td>
-                                      <span style="display:inline-block;width:18px;text-align:center;color:var(--accent);font-size:13px;">${p.starred ? '★' : ''}</span>
-                                      ${escHtml(p.name)}
-                                    </td>
-                                    <td><span class="pill pill-cat">${escHtml(p.category)}</span></td>
-                                    <td><span class="pill pill-maj">${escHtml(p.major)}</span></td>
-                                    <td><span style="font-size:12px;color:var(--text2)">${escHtml(p.department || '')}</span></td>
-                                    <td><span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text2)">${escHtml(p.month)}</span></td>
-                                  </tr>`).join('')}
-                              </tbody>
-                            </table>`;
+                                    <table class="data-table">
+                                      <thead>
+                                        <tr>
+                                          <th>Project Name</th>
+                                          <th>Category</th>
+                                          <th>Major Project</th>
+                                          <th>Department / Campus</th>
+                                          <th>Month Completed</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        ${filtered.map(p => `
+                                          <tr>
+                                            <td>
+                                              <span style="display:inline-block;width:18px;text-align:center;color:var(--accent);font-size:13px;">${p.starred ? '★' : ''}</span>
+                                              ${escHtml(p.name)}
+                                            </td>
+                                            <td><span class="pill pill-cat">${escHtml(p.category)}</span></td>
+                                            <td><span class="pill pill-maj">${escHtml(p.major)}</span></td>
+                                            <td><span style="font-size:12px;color:var(--text2)">${escHtml(p.department || '')}</span></td>
+                                            <td><span style="font-family:'DM Mono',monospace;font-size:11px;color:var(--text2)">${escHtml(p.month)}</span></td>
+                                          </tr>`).join('')}
+                                      </tbody>
+                                    </table>`;
     }
 
     function downloadCSV() {
@@ -3461,16 +3510,16 @@
         card.className = 'chart-card';
         const max = data.length ? Math.max(...data.map(d => d[1])) : 1;
         card.innerHTML = `
-                            <h3>${title}</h3>
-                            <div class="chart-inner">
-                              ${data.map(([label, count], i) => {const pct = Math.round((count / max) * 100);const grad = `linear-gradient(90deg, ${colorA}, ${colorB})`;return `<div class="bar-row">
-                                              <div class="bar-label" title="${escHtml(label)}">${escHtml(label)}</div>
-                                              <div class="bar-track">
-                                                <div class="bar-fill" style="width:${pct}%;background:${grad};opacity:${0.6 + 0.4 * (i === 0 ? 1 : count / max)}"></div>
-                                              </div>
-                                              <div class="bar-value">${count}</div>
-                                            </div>`;}).join('')}
-                            </div>`;
+                                    <h3>${title}</h3>
+                                    <div class="chart-inner">
+                                      ${data.map(([label, count], i) => {const pct = Math.round((count / max) * 100);const grad = `linear-gradient(90deg, ${colorA}, ${colorB})`;return `<div class="bar-row">
+                                                          <div class="bar-label" title="${escHtml(label)}">${escHtml(label)}</div>
+                                                          <div class="bar-track">
+                                                            <div class="bar-fill" style="width:${pct}%;background:${grad};opacity:${0.6 + 0.4 * (i === 0 ? 1 : count / max)}"></div>
+                                                          </div>
+                                                          <div class="bar-value">${count}</div>
+                                                        </div>`;}).join('')}
+                                    </div>`;
         return card;
     }
 
@@ -3693,9 +3742,9 @@
             row.draggable = true;
             row.style.cursor = 'grab';
             row.innerHTML = `
-                                          <span style="color:var(--text3);font-size:13px;margin-right:2px;flex-shrink:0;user-select:none;">⠿</span>
-                                          <a href="${escHtml(b.url)}" target="_blank" rel="noopener" class="settings-item-name" style="color:var(--accent);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(b.label)}</a>
-                                          <button class="settings-item-btn delete" title="Delete" onclick="deleteBookmark(${idx})">✕</button>`;
+                                                      <span style="color:var(--text3);font-size:13px;margin-right:2px;flex-shrink:0;user-select:none;">⠿</span>
+                                                      <a href="${escHtml(b.url)}" target="_blank" rel="noopener" class="settings-item-name" style="color:var(--accent);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(b.label)}</a>
+                                                      <button class="settings-item-btn delete" title="Delete" onclick="deleteBookmark(${idx})">✕</button>`;
 
             row.addEventListener('dragstart', () => {
                 bookmarkDragSrcIdx = idx;
@@ -3799,13 +3848,70 @@
             row.className = 'settings-item';
             row.style.alignItems = 'flex-start';
             row.innerHTML = `
-                                          <span style="flex:1;min-width:0;">
-                                            <span style="display:block;font-size:10px;font-family:'DM Mono',monospace;color:var(--text3);margin-bottom:2px;">${escHtml(formatNoteTimestamp(n.ts))}</span>
-                                            <span style="display:block;font-size:13px;color:var(--text);word-break:break-word;">${escHtml(n.text)}</span>
-                                          </span>
-                                          <button class="settings-item-btn delete" title="Delete" onclick="deleteQuickNote(${idx})">✕</button>`;
+                                                      <span style="flex:1;min-width:0;">
+                                                        <span style="display:block;font-size:10px;font-family:'DM Mono',monospace;color:var(--text3);margin-bottom:2px;">${escHtml(formatNoteTimestamp(n.ts))}</span>
+                                                        <span class="quicknote-text" style="display:block;font-size:13px;color:var(--text);word-break:break-word;cursor:text;">${linkify(n.text)}</span>
+                                                      </span>
+                                                      <button class="settings-item-btn delete" title="Delete" onclick="deleteQuickNote(${idx})">✕</button>`;
+
+            const textSpan = row.querySelector('.quicknote-text');
+            textSpan.addEventListener('click', e => {
+                // Don't hijack clicks on a linkified URL inside the note
+                if (e.target.tagName === 'A')
+                    return;
+                startEditingQuickNote(idx, textSpan);
+            });
+
             el.appendChild(row);
         });
+    }
+
+    function startEditingQuickNote(idx, textSpan) {
+        const original = quickNotes[idx].text;
+        const textarea = document.createElement('textarea');
+        textarea.value = original;
+        textarea.rows = 1;
+        textarea.style.cssText = 'width:100%;font-family:\'DM Sans\',sans-serif;font-size:13px;color:var(--text);background:var(--surface2);border:1px solid var(--accent);border-radius:var(--radius);padding:4px 6px;outline:none;resize:none;overflow:hidden;line-height:1.4;';
+        textSpan.replaceWith(textarea);
+        autoResizeTextarea(textarea);
+        textarea.focus();
+        textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+
+        let settled = false;
+        const commit = () => {
+            if (settled)
+                return;
+            settled = true;
+            const newText = textarea.value.trim();
+            if (newText === '') {
+                quickNotes.splice(idx, 1);
+                saveQuickNotesList();
+                renderQuickNotesList();
+                return;
+            }
+            if (newText !== original) {
+                quickNotes[idx].text = newText;
+                saveQuickNotesList();
+            }
+            renderQuickNotesList();
+        };
+
+        textarea.addEventListener('input', () => autoResizeTextarea(textarea));
+        textarea.addEventListener('blur', commit);
+        textarea.addEventListener('keydown', e => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                textarea.blur();
+            } else if (e.key === 'Escape') {
+                settled = true;
+                renderQuickNotesList();
+            }
+        });
+    }
+
+    function autoResizeTextarea(el) {
+        el.style.height = 'auto';
+        el.style.height = Math.min(el.scrollHeight, 160) + 'px';
     }
 
     function addQuickNote() {
@@ -3819,6 +3925,7 @@
         });
         saveQuickNotesList();
         input.value = '';
+        autoResizeTextarea(input);
         renderQuickNotesList();
     }
 
@@ -3886,9 +3993,9 @@
             row.className = 'settings-item';
             row.dataset.idx = idx;
             row.innerHTML = `
-                                          <span class="settings-item-name">${escHtml(item)}</span>
-                                          <button class="settings-item-btn edit" title="Rename" onclick="startEdit(this,'${type}',${idx})">✎</button>
-                                          <button class="settings-item-btn delete" title="Delete" onclick="deleteItem('${type}',${idx})">✕</button>`;
+                                                      <span class="settings-item-name">${escHtml(item)}</span>
+                                                      <button class="settings-item-btn edit" title="Rename" onclick="startEdit(this,'${type}',${idx})">✎</button>
+                                                      <button class="settings-item-btn delete" title="Delete" onclick="deleteItem('${type}',${idx})">✕</button>`;
             el.appendChild(row);
         });
     }
@@ -3928,9 +4035,9 @@
         const row = btn.closest('.settings-item');
         const current = getList(type)[idx];
         row.innerHTML = `
-                            <input class="edit-input" type="text" value="${escHtml(current)}">
-                            <button class="settings-item-btn save"   onclick="saveEdit(this,'${type}',${idx})">✓</button>
-                            <button class="settings-item-btn cancel" onclick="renderSettingsLists()">✕</button>`;
+                                    <input class="edit-input" type="text" value="${escHtml(current)}">
+                                    <button class="settings-item-btn save"   onclick="saveEdit(this,'${type}',${idx})">✓</button>
+                                    <button class="settings-item-btn cancel" onclick="renderSettingsLists()">✕</button>`;
         const input = row.querySelector('input');
         input.focus();
         input.select();
@@ -4015,10 +4122,14 @@
             if (e.key === 'Enter')
                 document.getElementById('new-bookmark-url').focus();
         });
-        document.getElementById('new-quicknote-input').addEventListener('keydown', e => {
-            if (e.key === 'Enter')
+        const quickNoteInput = document.getElementById('new-quicknote-input');
+        quickNoteInput.addEventListener('keydown', e => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
                 addQuickNote();
+            }
         });
+        quickNoteInput.addEventListener('input', () => autoResizeTextarea(quickNoteInput));
     });
     </script>
 </body>
